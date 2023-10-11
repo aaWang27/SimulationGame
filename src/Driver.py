@@ -28,19 +28,25 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.paramModel = ParamModel("Blood Pressure")
 
-        dynamic_canvas = FigureCanvas(Figure(figsize=(5, 3)))
-        layout.addWidget(dynamic_canvas)
-        layout.addWidget(NavigationToolbar(dynamic_canvas, self))
+        self.dynamic_canvas = FigureCanvas(Figure(figsize=(10, 6)))
+        layout.addWidget(self.dynamic_canvas)
+        layout.addWidget(NavigationToolbar(self.dynamic_canvas, self))
 
-        self.curTime = 1
-
-        self._dynamic_ax = dynamic_canvas.figure.subplots()
-        sol = self.paramModel.solve_ivp([0, self.curTime], [2])
+        self._dynamic_ax = self.dynamic_canvas.figure.subplots()
 
         # Set up a Line2D.
         self._dynamic_ax.set_xlim(0, 60)
+        self._start_plot()
+
+    def _start_plot(self):
+        self.curTime = 0
+
+        sol = self.paramModel.solve_ivp([0, self.curTime], [2])
+
+        self._dynamic_ax.set_xlabel('Time')
+        self._dynamic_ax.set_ylabel(self.paramModel.get_param_name())
         self._line, = self._dynamic_ax.plot(sol.t, sol.y, color='b')
-        self._timer = dynamic_canvas.new_timer()
+        self._timer = self.dynamic_canvas.new_timer()
         self._timer.add_callback(self._update_canvas)
         self._timer.start()
 

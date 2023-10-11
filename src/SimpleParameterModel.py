@@ -34,3 +34,6 @@ class SimpleParameterModel:
         # plt.show()
 
         return sol
+
+    def get_param_name(self):
+        return self.param
