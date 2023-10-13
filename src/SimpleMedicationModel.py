@@ -3,4 +3,4 @@ class SimpleMedicationModel:
     def nothing(t, y): return 0
     def something(t, y): return -0.1 * y
 
-    def variableDerivative(t, y, rate): return -rate
+    def variableDerivative(t, y, rate): return -rate  * y

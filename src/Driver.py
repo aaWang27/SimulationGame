@@ -25,6 +25,7 @@ from matplotlib.figure import Figure
 
 import SimpleMedicationModel as MedModel
 from SimpleParameterModel import SimpleParameterModel as ParamModel
+from UserParameterModel import UserParameterModel as UsrParamModel
 
 
 class ApplicationWindow(QtWidgets.QMainWindow):
@@ -32,13 +33,18 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         super().__init__()
         self._main = QtWidgets.QWidget()
 
+        self.savedTime = 0
+        self.curTime = 0
+        self.y = 0
+        self.reset = False
+
         self.setCentralWidget(self._main)
         layout = QtWidgets.QVBoxLayout(self._main)
         layout.setGeometry(QRect(0, 0, 00, 0))
         self._main.setGeometry(0, 0, 0, 00)
         self._main.setWindowTitle('Simulation Game')
 
-        self.paramModel = ParamModel("Blood Pressure")
+        self.paramModel = UsrParamModel("Blood Pressure", 0)
 
         self.dynamic_canvas = FigureCanvas(Figure(figsize=(10, 6)))
         layout.addWidget(self.dynamic_canvas)
@@ -58,13 +64,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self._dynamic_ax.set_xlim(0, 60)
         self._start_plot()
     
-    @pyqtSlot()
-    def increaseMedication(self):
-        print('Increase')
-    
-    @pyqtSlot()
-    def decreaseMedication(self):
-        print("Decrease")
+
 
     def _start_plot(self):
         self.curTime = 0
@@ -80,9 +80,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     def _update_canvas(self):
         self.curTime += 1
-        sol = self.paramModel.solve_ivp([0, self.curTime], [130])
+        if (self.reset):
+            sol = self.paramModel.solve_ivp([self.savedTime, self.curTime], [self.y])
+            self.reset = False
+        else:
+            sol = self.paramModel.solve_ivp([0, self.curTime], [130])
         if self.curTime > 60:
             self._dynamic_ax.set_xlim(self.curTime - 59, self.curTime + 1)
+        self.y = sol.y
         self._dynamic_ax.plot(sol.t, sol.y, color='b')
         self._line.figure.canvas.draw()
 
@@ -223,7 +228,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def actionOK(self):
         equation = self.label.text()
         self.label.setText("")
-        return eval(equation)
+        self.paramModel.updateRate(eval(equation))
+        self.savedTime = self.curTime
+        self.reset = True
 
     
  
