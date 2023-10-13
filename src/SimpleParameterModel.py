@@ -9,13 +9,13 @@ class SimpleParameterModel:
     def __init__(self, parameterName):
         self.param = parameterName
 
-    def model(self, t, y):
+    def automatedModel(self, t, y):
         # TODO make random changes
-        parameterComponent = 0.3
-        return SimpleMedicationModel.something(t, y) + parameterComponent
+        parameterComponent = 0.1
+        return SimpleMedicationModel.something(t, y) + parameterComponent * y
 
     def solve_ivp(self, tRange, y0):
-        sol = solve_ivp(self.model, t_span=tRange, y0=y0, t_eval=np.linspace(0, tRange[1], tRange[1]+1))
+        sol = solve_ivp(self.automatedModel, t_span=tRange, y0=y0, t_eval=np.linspace(0, tRange[1], tRange[1]+1))
 
         # print(sol.t)
         if(len(sol.t)>0):
