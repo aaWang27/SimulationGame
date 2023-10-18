@@ -39,31 +39,24 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.reset = False
 
         self.setCentralWidget(self._main)
-        layout = QtWidgets.QVBoxLayout(self._main)
-        layout.setGeometry(QRect(0, 0, 00, 0))
-        self._main.setGeometry(0, 0, 0, 00)
+        self.layout = QtWidgets.QGridLayout(self._main)
+        self.layout.setGeometry(QRect(0, 0, 0, 0))
+        self._main.setGeometry(0, 0, 0, 0)
         self._main.setWindowTitle('Simulation Game')
 
         self.paramModel = UsrParamModel("Blood Pressure", 0)
 
         self.dynamic_canvas = FigureCanvas(Figure(figsize=(10, 6)))
-        layout.addWidget(self.dynamic_canvas)
-        layout.addWidget(NavigationToolbar(self.dynamic_canvas, self))
+        self.layout.addWidget(self.dynamic_canvas, 0, 1)
+        self.layout.addWidget(NavigationToolbar(self.dynamic_canvas, self))
 
-
-
-    
-
-        layout.addWidget(self.UiComponents())
-
-
+        self.layout.addLayout(self.UiComponents(), 1, 1)
 
         self._dynamic_ax = self.dynamic_canvas.figure.subplots()
 
         # Set up a Line2D.
         self._dynamic_ax.set_xlim(0, 60)
         self._start_plot()
-    
 
 
     def _start_plot(self):
@@ -92,12 +85,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self._line.figure.canvas.draw()
 
     def UiComponents(self):
- 
+        self.keypadLayout = QtWidgets.QGridLayout()
+
         # creating a label
         self.label = QLabel(self)
- 
-        # setting geometry to the label
-        self.label.setGeometry(5, 5, 260, 70)
+        # self.label.setGeometry(5, 5, 260, 70)
  
         # creating label multi line
         self.label.setWordWrap(True)
@@ -115,72 +107,49 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         # setting font
         self.label.setFont(QFont('Arial', 15))
  
- 
-        # adding number button to the screen
+        # adding number buttons to the screen
         # creating a push button
         push1 = QPushButton("1", self)
- 
-        # setting geometry
-        push1.setGeometry(5, 150, 80, 40)
+        # push1.setGeometry(5, 150, 80, 40)
  
         # creating a push button
         push2 = QPushButton("2", self)
- 
-        # setting geometry
-        push2.setGeometry(95, 150, 80, 40)
+        # push2.setGeometry(95, 150, 80, 40)
  
         # creating a push button
         push3 = QPushButton("3", self)
- 
-        # setting geometry
-        push3.setGeometry(185, 150, 80, 40)
+        # push3.setGeometry(185, 150, 80, 40)
  
         # creating a push button
         push4 = QPushButton("4", self)
- 
-        # setting geometry
-        push4.setGeometry(5, 200, 80, 40)
+        # push4.setGeometry(5, 200, 80, 40)
  
         # creating a push button
         push5 = QPushButton("5", self)
- 
-        # setting geometry
-        push5.setGeometry(95, 200, 80, 40)
+        # push5.setGeometry(95, 200, 80, 40)
  
         # creating a push button
         push6 = QPushButton("5", self)
- 
-        # setting geometry
-        push6.setGeometry(185, 200, 80, 40)
+        # push6.setGeometry(185, 200, 80, 40)
  
         # creating a push button
         push7 = QPushButton("7", self)
- 
-        # setting geometry
-        push7.setGeometry(5, 250, 80, 40)
+        # push7.setGeometry(5, 250, 80, 40)
  
         # creating a push button
         push8 = QPushButton("8", self)
- 
-        # setting geometry
-        push8.setGeometry(95, 250, 80, 40)
+        # push8.setGeometry(95, 250, 80, 40)
  
         # creating a push button
         push9 = QPushButton("9", self)
- 
-        # setting geometry
-        push9.setGeometry(185, 250, 80, 40)
+        # push9.setGeometry(185, 250, 80, 40)
  
         # creating a push button
         push0 = QPushButton("0", self)
- 
-        # setting geometry
-        push0.setGeometry(5, 300, 80, 40)
+        # push0.setGeometry(5, 300, 80, 40)
  
         # adding operator push button
         # creating push button
- 
-        # setting geometry
  
         # adding equal button a color effect
         c_effect = QGraphicsColorizeEffect()
@@ -188,27 +157,37 @@ class ApplicationWindow(QtWidgets.QMainWindow):
  
         # creating push button
         push_OK = QPushButton("OK", self)
- 
-        # setting geometry
-        push_OK.setGeometry(185, 300, 80, 40)
+        # push_OK.setGeometry(185, 300, 80, 40)
  
         # creating push button
         push_point = QPushButton(".", self)
- 
-        # setting geometry
-        push_point.setGeometry(95, 300, 80, 40)
- 
- 
+        # push_point.setGeometry(95, 300, 80, 40)
+
         # clear button
         push_clear = QPushButton("Clear", self)
-        push_clear.setGeometry(5, 100, 170, 40)
+        # push_clear.setGeometry(5, 100, 170, 40)
  
         # del one character button
         push_del = QPushButton("Del", self)
-        push_del.setGeometry(185, 100, 80, 40)
- 
-        # adding action to each of the button
+        # push_del.setGeometry(185, 100, 80, 40)
 
+        self.keypadLayout.addWidget(self.label, 0, 1)
+        self.keypadLayout.addWidget(push_clear, 1, 0)
+        self.keypadLayout.addWidget(push_del, 1, 2)
+        self.keypadLayout.addWidget(push1, 2, 0)
+        self.keypadLayout.addWidget(push2, 2, 1)
+        self.keypadLayout.addWidget(push3, 2, 2)
+        self.keypadLayout.addWidget(push4, 3, 0)
+        self.keypadLayout.addWidget(push5, 3, 1)
+        self.keypadLayout.addWidget(push6, 3, 2)
+        self.keypadLayout.addWidget(push7, 4, 0)
+        self.keypadLayout.addWidget(push8, 4, 1)
+        self.keypadLayout.addWidget(push9, 4, 2)
+        self.keypadLayout.addWidget(push0, 5, 0)
+        self.keypadLayout.addWidget(push_point, 5, 1)
+        self.keypadLayout.addWidget(push_OK, 5, 2)
+
+        # add actions to each of the button
         push0.clicked.connect(self.action0)
         push1.clicked.connect(self.action1)
         push2.clicked.connect(self.action2)
@@ -223,7 +202,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         push_point.clicked.connect(self.action_point)
         push_clear.clicked.connect(self.action_clear)
         push_del.clicked.connect(self.action_del)
- 
+
+        return self.keypadLayout
     
     def actionOK(self):
         equation = self.label.text()
@@ -231,8 +211,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.paramModel.updateRate(eval(equation))
         self.savedTime = self.curTime
         self.reset = True
-
-    
  
     def action_point(self):
         # appending label text
@@ -298,7 +276,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         text = self.label.text()
         print(text[:len(text)-1])
         self.label.setText(text[:len(text)-1])
- 
 
 if __name__ == "__main__":
     # Check whether there is already a running QApplication (e.g., if running
