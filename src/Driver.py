@@ -168,8 +168,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         push_del = QPushButton("Del", self)
         # push_del.setGeometry(185, 100, 80, 40)
 
-        self.keypadLayout.addWidget(self.label, 0, 1)
-        self.keypadLayout.addWidget(push_clear, 1, 0)
+        self.keypadLayout.addWidget(self.label, 0, 0, 1, 3)
+        self.keypadLayout.addWidget(push_clear, 1, 0, 1, 2)
         self.keypadLayout.addWidget(push_del, 1, 2)
         self.keypadLayout.addWidget(push1, 2, 0)
         self.keypadLayout.addWidget(push2, 2, 1)
