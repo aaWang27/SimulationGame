@@ -52,14 +52,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.layout.addLayout(self.UiComponents(), 1, 1)
 
-<<<<<<< HEAD
         self.layout.addLayout(self.UIDropdownComponents(), 0, 0)
 
         self._dynamic_ax = self.dynamic_canvas.figure.subplots()
-=======
-        self._param_ax = self.dynamic_canvas.figure.subplots()
-        self._med_ax = self._param_ax.twinx()
->>>>>>> 545855346bf177d6e6c3e2fe676cc72154b5ff8c
 
         # Set up a Line2D.
         self._param_ax.set_xlim(0, 60)
