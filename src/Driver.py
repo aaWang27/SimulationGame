@@ -41,20 +41,21 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.medValues = []
         self.times = []
 
+        self.started = False
+
         self.dynamic_canvas = FigureCanvas(Figure(figsize=(10, 6)))
         self.layout.addWidget(self.dynamic_canvas, 0, 1)
         # self.layout.addWidget(NavigationToolbar(self.dynamic_canvas, self))
-
-        self.layout.addLayout(self.UiComponents(), 1, 1)
-
-        self.layout.addLayout(self.UIDropdownComponents(), 0, 0)
 
         self._param_ax = self.dynamic_canvas.figure.subplots()
         self._med_ax = self._param_ax.twinx()
 
         # Set up a Line2D.
         self._param_ax.set_xlim(0, 60)
-        self._start_plot()
+        # self._start_plot()
+
+        self.layout.addLayout(self.keypadComponents(), 1, 1)
+        self.layout.addLayout(self.UIDropdownComponents(), 0, 0)
 
     def _start_plot(self):
         self.curTime = 0
@@ -97,7 +98,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self._param_line.figure.canvas.draw()
             self._med_line.figure.canvas.draw()
 
-    def UiComponents(self):
+    def keypadComponents(self):
         self.keypadLayout = QtWidgets.QGridLayout()
 
         # creating a label
@@ -223,10 +224,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         def actionSetParam():
             self.combobox2.clear()
             self.combobox2.addItems(self.medicationMap[self.combobox1.currentText()])
+            self.model_selected = True
             return self.combobox1.currentText()
 
         self.dropdownLayout = QtWidgets.QGridLayout()
 
+        self.model_selected = False
         self.paramLabel = QLabel('Choose Parameter', self) 
  
         self.combobox1 = QComboBox()
@@ -245,8 +248,17 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.dropdownLayout.addWidget(self.medLabel, 2, 0)
         self.dropdownLayout.addWidget(self.combobox2, 3, 0)
+
+        self.startButton = QPushButton("Start Simulation", self)
+        self.startButton.clicked.connect(self.startSimulation)
+        self.dropdownLayout.addWidget(self.startButton, 4, 0)
                 
         return self.dropdownLayout
+
+    def startSimulation(self):
+        if(self.model_selected and not(self.started)):
+            self.started = True
+            self._start_plot()
 
     def actionOK(self):
         equation = self.label.text()
