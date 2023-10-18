@@ -33,6 +33,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         super().__init__()
         self._main = QtWidgets.QWidget()
 
+        self.param = None
+        self.medication = None
+        self.medicationMap = {"Blood Pressure": ["a", "b"],
+                              "Blood Glucose": ["c", "d"],
+                              "Oxygen Content": ["e", "f"]}
+
         self.savedTime = 0
         self.curTime = 0
         self.y = 0
@@ -51,6 +57,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.layout.addWidget(NavigationToolbar(self.dynamic_canvas, self))
 
         self.layout.addLayout(self.UiComponents(), 1, 1)
+
+        self.layout.addLayout(self.UIDropdownComponents(), 0, 0)
 
         self._dynamic_ax = self.dynamic_canvas.figure.subplots()
 
@@ -202,6 +210,42 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         return self.keypadLayout
     
+    def UIDropdownComponents(self):
+
+        def actionSetParam():
+            self.combobox2.clear()
+            self.combobox2.addItems(self.medicationMap[self.combobox1.currentText()])
+            return self.combobox1.currentText()
+
+        self.dropdownLayout = QtWidgets.QGridLayout()
+
+
+ 
+        self.paramLabel = QLabel('Choose Parameter', self) 
+ 
+        self.combobox1 = QComboBox()
+        self.combobox1.addItem('Blood Pressure')
+        self.combobox1.addItem('Blood Glucose')
+        self.combobox1.addItem('Oxygen Content')
+
+        self.combobox1.activated.connect(actionSetParam)
+        
+        self.dropdownLayout.addWidget(self.paramLabel, 0, 0)
+        self.dropdownLayout.addWidget(self.combobox1, 1, 0)
+
+        self.medLabel = QLabel('Choose Medication', self)
+
+
+        self.combobox2 = QComboBox()
+
+        self.dropdownLayout.addWidget(self.medLabel, 2, 0)
+        self.dropdownLayout.addWidget(self.combobox2, 3, 0)
+                
+        return self.dropdownLayout
+
+    
+        
+
     def actionOK(self):
         equation = self.label.text()
         self.label.setText("")
