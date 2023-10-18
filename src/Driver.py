@@ -1,27 +1,18 @@
 import sys
 import time
 
-
 import numpy as np
-from PyQt5.QtCore import QRect
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import \
     NavigationToolbar2QT as NavigationToolbar
-# from matplotlib.backends.qt_compat import QtWidgets
-from PyQt5 import QtCore, QtGui, QtWidgets
+from matplotlib.figure import Figure
 
 # importing libraries
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
-from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
- 
-
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton
-from PyQt5.QtCore import pyqtSlot
-
-from matplotlib.figure import Figure
 
 import SimpleMedicationModel as MedModel
 from SimpleParameterModel import SimpleParameterModel as ParamModel
@@ -51,30 +42,45 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self._main.setWindowTitle('Simulation Game')
 
         self.paramModel = UsrParamModel("Blood Pressure", 0)
+        self.paramValues = []
+        self.medValues = []
+        self.times = []
 
         self.dynamic_canvas = FigureCanvas(Figure(figsize=(10, 6)))
         self.layout.addWidget(self.dynamic_canvas, 0, 1)
-        self.layout.addWidget(NavigationToolbar(self.dynamic_canvas, self))
+        # self.layout.addWidget(NavigationToolbar(self.dynamic_canvas, self))
 
         self.layout.addLayout(self.UiComponents(), 1, 1)
 
+<<<<<<< HEAD
         self.layout.addLayout(self.UIDropdownComponents(), 0, 0)
 
         self._dynamic_ax = self.dynamic_canvas.figure.subplots()
+=======
+        self._param_ax = self.dynamic_canvas.figure.subplots()
+        self._med_ax = self._param_ax.twinx()
+>>>>>>> 545855346bf177d6e6c3e2fe676cc72154b5ff8c
 
         # Set up a Line2D.
-        self._dynamic_ax.set_xlim(0, 60)
+        self._param_ax.set_xlim(0, 60)
         self._start_plot()
-
 
     def _start_plot(self):
         self.curTime = 0
+        self.initVal = [130]
+        self.savedTime = 0
+        self.curMed = 0
 
-        sol = self.paramModel.solve_ivp([0, self.curTime], [130])
+        self.times.append(self.curTime)
+        self.paramValues.append(self.initVal[0])
+        self.medValues.append(self.curMed)
 
-        self._dynamic_ax.set_xlabel('Time')
-        self._dynamic_ax.set_ylabel(self.paramModel.get_param_name())
-        self._line, = self._dynamic_ax.plot(sol.t, sol.y, color='b')
+        sol = self.paramModel.solve_ivp([self.savedTime, self.curTime], self.initVal)
+        self._param_ax.set_xlabel('Time')
+        self._param_ax.set_ylabel(self.paramModel.get_param_name())
+        self._med_ax.set_ylabel('Medication Rate')
+        self._param_line, = self._param_ax.plot(sol.t, sol.y, color='b')
+        self._med_line, = self._med_ax.plot(self.times, self.medValues, color='r')
         self._timer = self.dynamic_canvas.new_timer()
         self._timer.add_callback(self._update_canvas)
         self._timer.start()
@@ -82,12 +88,23 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def _update_canvas(self):
         self.curTime += 1
 
-        sol = self.paramModel.solve_ivp([0, self.curTime], [130])
-        if self.curTime > 60:
-            self._dynamic_ax.set_xlim(self.curTime - 59, self.curTime + 1)
+        sol = self.paramModel.solve_ivp([self.savedTime, self.curTime], self.initVal)
+        self.times.append(self.curTime)
+        self.paramValues.append(sol.y[-1])
+        self.medValues.append(self.curMed)
         self.y = sol.y
-        self._dynamic_ax.plot(sol.t, sol.y, color='b')
-        self._line.figure.canvas.draw()
+        if self.curTime > 60:
+            self._param_ax.set_xlim(self.curTime - 59, self.curTime + 1)
+            self._med_ax.set_xlim(self.curTime - 59, self.curTime + 1)
+            self._param_ax.plot(self.times[-60:], self.paramValues[-60:], color='b')
+            self._med_ax.plot(self.times[-60:], self.medValues[-60:], color='r')
+            self._param_line.figure.canvas.draw()
+            self._med_line.figure.canvas.draw()
+        else:
+            self._param_ax.plot(self.times, self.paramValues, color='b')
+            self._med_ax.plot(self.times, self.medValues, color='r')
+            self._param_line.figure.canvas.draw()
+            self._med_line.figure.canvas.draw()
 
     def UiComponents(self):
         self.keypadLayout = QtWidgets.QGridLayout()
@@ -176,8 +193,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         push_del = QPushButton("Del", self)
         # push_del.setGeometry(185, 100, 80, 40)
 
-        self.keypadLayout.addWidget(self.label, 0, 1)
-        self.keypadLayout.addWidget(push_clear, 1, 0)
+        self.keypadLayout.addWidget(self.label, 0, 0, 1, 3)
+        self.keypadLayout.addWidget(push_clear, 1, 0, 1, 2)
         self.keypadLayout.addWidget(push_del, 1, 2)
         self.keypadLayout.addWidget(push1, 2, 0)
         self.keypadLayout.addWidget(push2, 2, 1)
@@ -250,8 +267,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         equation = self.label.text()
         self.label.setText("")
         self.paramModel.updateRate(eval(equation))
+        self.curMed = equation
         self.savedTime = self.curTime
-        self.reset = True
+        self.initVal = [self.paramValues[-1]]
+        # self.reset = True
  
     def action_point(self):
         # appending label text

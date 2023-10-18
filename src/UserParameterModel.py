@@ -19,7 +19,7 @@ class UserParameterModel:
         return SimpleMedicationModel.variableDerivative(t, y, self.rate) + parameterComponent * y
 
     def solve_ivp(self, tRange, y0):
-        sol = solve_ivp(self.userModel, t_span=tRange, y0=y0, t_eval=np.linspace(0, tRange[1], tRange[1]+1))
+        sol = solve_ivp(self.userModel, t_span=tRange, y0=y0, t_eval=np.linspace(tRange[0], tRange[1], tRange[1]+1))
 
         # print(sol.t)
         if(len(sol.t)>0):
