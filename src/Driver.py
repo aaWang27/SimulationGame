@@ -30,11 +30,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                               "Blood Glucose": ["c", "d"],
                               "Oxygen Content": ["e", "f"]}
 
-        self.savedTime = 0
-        self.curTime = 0
-        self.y = 0
-        self.reset = False
-
         self.setCentralWidget(self._main)
         self.layout = QtWidgets.QGridLayout(self._main)
         self.layout.setGeometry(QRect(0, 0, 0, 0))
@@ -54,7 +49,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.layout.addLayout(self.UIDropdownComponents(), 0, 0)
 
-        self._dynamic_ax = self.dynamic_canvas.figure.subplots()
         self._param_ax = self.dynamic_canvas.figure.subplots()
         self._med_ax = self._param_ax.twinx()
 
@@ -246,7 +240,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.dropdownLayout.addWidget(self.combobox1, 1, 0)
 
         self.medLabel = QLabel('Choose Medication', self)
-
 
         self.combobox2 = QComboBox()
 
