@@ -80,11 +80,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     def _update_canvas(self):
         self.curTime += 1
-        if (self.reset):
-            sol = self.paramModel.solve_ivp([self.savedTime, self.curTime], [self.y])
-            self.reset = False
-        else:
-            sol = self.paramModel.solve_ivp([0, self.curTime], [130])
+
+        sol = self.paramModel.solve_ivp([0, self.curTime], [130])
         if self.curTime > 60:
             self._dynamic_ax.set_xlim(self.curTime - 59, self.curTime + 1)
         self.y = sol.y
