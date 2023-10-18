@@ -37,6 +37,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.paramModel = UsrParamModel("Blood Pressure", 0)
         self.paramValues = []
+        self.medValues = []
         self.times = []
 
         self.dynamic_canvas = FigureCanvas(Figure(figsize=(10, 6)))
@@ -45,24 +46,29 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.layout.addLayout(self.UiComponents(), 1, 1)
 
-        self._dynamic_ax = self.dynamic_canvas.figure.subplots()
+        self._param_ax = self.dynamic_canvas.figure.subplots()
+        self._med_ax = self._param_ax.twinx()
 
         # Set up a Line2D.
-        self._dynamic_ax.set_xlim(0, 60)
+        self._param_ax.set_xlim(0, 60)
         self._start_plot()
 
     def _start_plot(self):
         self.curTime = 0
         self.initVal = [130]
         self.savedTime = 0
+        self.curMed = 0
 
         self.times.append(self.curTime)
         self.paramValues.append(self.initVal[0])
+        self.medValues.append(self.curMed)
 
         sol = self.paramModel.solve_ivp([self.savedTime, self.curTime], self.initVal)
-        self._dynamic_ax.set_xlabel('Time')
-        self._dynamic_ax.set_ylabel(self.paramModel.get_param_name())
-        self._line, = self._dynamic_ax.plot(sol.t, sol.y, color='b')
+        self._param_ax.set_xlabel('Time')
+        self._param_ax.set_ylabel(self.paramModel.get_param_name())
+        self._med_ax.set_ylabel('Medication Rate')
+        self._param_line, = self._param_ax.plot(sol.t, sol.y, color='b')
+        self._med_line, = self._med_ax.plot(self.times, self.medValues, color='r')
         self._timer = self.dynamic_canvas.new_timer()
         self._timer.add_callback(self._update_canvas)
         self._timer.start()
@@ -73,14 +79,20 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         sol = self.paramModel.solve_ivp([self.savedTime, self.curTime], self.initVal)
         self.times.append(self.curTime)
         self.paramValues.append(sol.y[-1])
+        self.medValues.append(self.curMed)
         self.y = sol.y
         if self.curTime > 60:
-            self._dynamic_ax.set_xlim(self.curTime - 59, self.curTime + 1)
-            self._dynamic_ax.plot(self.times, self.paramValues[-60:], color='b')
-            self._line.figure.canvas.draw()
+            self._param_ax.set_xlim(self.curTime - 59, self.curTime + 1)
+            self._med_ax.set_xlim(self.curTime - 59, self.curTime + 1)
+            self._param_ax.plot(self.times[-60:], self.paramValues[-60:], color='b')
+            self._med_ax.plot(self.times[-60:], self.medValues[-60:], color='r')
+            self._param_line.figure.canvas.draw()
+            self._med_line.figure.canvas.draw()
         else:
-            self._dynamic_ax.plot(self.times, self.paramValues, color='b')
-            self._line.figure.canvas.draw()
+            self._param_ax.plot(self.times, self.paramValues, color='b')
+            self._med_ax.plot(self.times, self.medValues, color='r')
+            self._param_line.figure.canvas.draw()
+            self._med_line.figure.canvas.draw()
 
     def UiComponents(self):
         self.keypadLayout = QtWidgets.QGridLayout()
@@ -207,6 +219,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         equation = self.label.text()
         self.label.setText("")
         self.paramModel.updateRate(eval(equation))
+        self.curMed = equation
         self.savedTime = self.curTime
         self.initVal = [self.paramValues[-1]]
         # self.reset = True
