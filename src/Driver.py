@@ -15,6 +15,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
 import SimpleMedicationModel as MedModel
+from SimpleMedicationModel import SimpleMedicationModel as MedModel
 from SimpleParameterModel import SimpleParameterModel as ParamModel
 from UserParameterModel import UserParameterModel as UsrParamModel
 
@@ -26,6 +27,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.param = None
         self.medication = None
+        self.curMedRate = 0
+
+        self.decayRate = MedModel.bodyMedicationADecay
+
         self.medicationMap = {"Blood Pressure": ["a", "b"],
                               "Blood Glucose": ["c", "d"],
                               "Oxygen Content": ["e", "f"]}
@@ -56,6 +61,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.layout.addLayout(self.keypadComponents(), 1, 1)
         self.layout.addLayout(self.UIDropdownComponents(), 0, 0)
+        # self.layout.addLayout(self.logComponents(), 0, 1)
 
     def _start_plot(self):
         self.curTime = 0
@@ -65,7 +71,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.times.append(self.curTime)
         self.paramValues.append(self.initVal[0])
-        self.medValues.append(self.curMed)
+        self.medValues.append(0)
 
         sol = self.paramModel.solve_ivp([self.savedTime, self.curTime], self.initVal)
         self._param_ax.set_xlabel('Time')
@@ -83,7 +89,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         sol = self.paramModel.solve_ivp([self.savedTime, self.curTime], self.initVal)
         self.times.append(self.curTime)
         self.paramValues.append(sol.y[-1])
-        self.medValues.append(self.curMed)
+        self.medValues.append(self.medValues[-1] + float(self.curMedRate)/60 + self.decayRate(self.medValues[-1]))
+        self.paramModel.updateDosage(self.medValues[-1])
         self.y = sol.y
         if self.curTime > 60:
             self._param_ax.set_xlim(self.curTime - 59, self.curTime + 1)
@@ -97,6 +104,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self._med_ax.plot(self.times, self.medValues, color='r')
             self._param_line.figure.canvas.draw()
             self._med_line.figure.canvas.draw()
+
 
     def keypadComponents(self):
         self.keypadLayout = QtWidgets.QGridLayout()
@@ -143,7 +151,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         # push5.setGeometry(95, 200, 80, 40)
  
         # creating a push button
-        push6 = QPushButton("5", self)
+        push6 = QPushButton("6", self)
         # push6.setGeometry(185, 200, 80, 40)
  
         # creating a push button
@@ -218,6 +226,24 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         push_del.clicked.connect(self.action_del)
 
         return self.keypadLayout
+
+    # def logComponents(self):
+    #     self.textbox = QTextEdit(self)
+    #     self.setReadOnly(True)
+    #     self.setLineWrapMode(QTextEdit.NoWrap)
+
+    #     font = self.font()
+    #     font.setFamily("Verdana")
+    
+    #     font.setPointSize(10)
+    #     self.moveCursor(QTextCursor.End)
+    #     self.setCurrentFont(font)
+    #     self.insertPlainText(self.curMedRate)
+
+    #     scroll = self.verticalScrollBar()
+    #     scroll.setValue(sb.maximum())
+
+    #     return self.textbox
     
     def UIDropdownComponents(self):
 
@@ -259,16 +285,19 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         if(self.model_selected and not(self.started)):
             self.started = True
             self._start_plot()
-
+    
     def actionOK(self):
-        equation = self.label.text()
-        self.label.setText("")
-        self.paramModel.updateRate(eval(equation))
-        self.curMed = equation
-        self.savedTime = self.curTime
-        self.initVal = [self.paramValues[-1]]
-        # self.reset = True
- 
+        try:
+            equation = self.label.text()
+            self.label.setText("")
+            self.curMedRate = eval(equation)
+            self.savedTime = self.curTime
+            self.initVal = [self.paramValues[-1]]
+            # self.reset = True
+        except:
+            print("Invalid")
+
+
     def action_point(self):
         # appending label text
         text = self.label.text()
@@ -333,6 +362,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         text = self.label.text()
         print(text[:len(text)-1])
         self.label.setText(text[:len(text)-1])
+        
 
 if __name__ == "__main__":
     # Check whether there is already a running QApplication (e.g., if running
