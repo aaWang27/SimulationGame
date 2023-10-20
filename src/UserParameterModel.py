@@ -6,17 +6,29 @@ import matplotlib.pyplot as plt
 from SimpleMedicationModel import SimpleMedicationModel
 
 class UserParameterModel:
+<<<<<<< HEAD
     def __init__(self, parameterName, dosage):
         self.param = parameterName
         self.dosage = dosage
+=======
+    def __init__(self, parameterName, medicationModel, rate):
+        self.param = parameterName
+        self.rate = rate
+        self.medicationModel = medicationModel
+>>>>>>> 0e5cfb6f074456ebb8f0cad6c75853c526378aff
     
     def updateDosage(self, newDosage):
         self.dosage = newDosage
 
     def userModel(self, t, y):
         # TODO make random changes
+<<<<<<< HEAD
         parameterComponent = 0.01
         return SimpleMedicationModel.variableDerivative(t, y, self.dosage) + parameterComponent * y
+=======
+        parameterComponent = 0.1
+        return self.medicationModel.variableDerivative(t, y, self.rate) + parameterComponent * y
+>>>>>>> 0e5cfb6f074456ebb8f0cad6c75853c526378aff
 
     def solve_ivp(self, tRange, y0):
         sol = solve_ivp(self.userModel, t_span=tRange, y0=y0, t_eval=np.linspace(tRange[0], tRange[1], tRange[1]+1))
