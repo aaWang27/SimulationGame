@@ -239,7 +239,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         # add actions to each of the button
         push0.clicked.connect(self.action0)
         push1.clicked.connect(self.action1)
- + ""sle]e        push2.clicked.connect(self.action2)
+        push2.clicked.connect(self.action2)
         push3.clicked.connect(self.action3)
         push4.clicked.connect(self.action4)
         push5.clicked.connect(self.action5)
@@ -265,7 +265,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     #     font.setPointSize(10)
     #     self.moveCursor(QTextCursor.End)
     #     self.setCurrentFont(font)
-    #     self.insertPlainText(self.curMedRate)
+    #     self.insertPlainText(self.curMedRate + "/n")
 
     #     scroll = self.verticalScrollBar()
     #     scroll.setValue(sb.maximum())
@@ -295,7 +295,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.combobox2 = QComboBox()
 
         self.startButton = QPushButton("Start Simulation", self)
-        self.startButton.clicked.c(onnect(s)elf.startSimulation)
+        self.startButton.clicked.connect(self.startSimulation)
 
         # add buttons and dropdown menus to dropdown layout
         self.dropdownLayout.addWidget(self.paramLabel, 0, 0)
