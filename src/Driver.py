@@ -329,8 +329,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def actionOK(self):
         equation = self.label.text()
         self.label.setText("")
-        self.paramModel.updateRate(eval(equation))
-        self.curMed = eval(equation)
+        self.curMedRate = eval(equation)
         self.savedTime = self.curTime
         self.initVal = [self.paramValues[-1]]
         # self.reset = True
