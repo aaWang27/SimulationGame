@@ -79,7 +79,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         # add keypad and dropdown menu to GUI
         self.layout.addLayout(self.keypadComponents(), 1, 1)
         self.layout.addLayout(self.UIDropdownComponents(), 0, 0)
-        # self.layout.addLayout(self.logComponents(), 0, 1)
+        self.layout.addLayout(self.logComponents(), 1, 0)
 
     def _start_plot(self):
         self.curTime = 0  # current time
@@ -263,23 +263,25 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         return self.keypadLayout
 
-    # def logComponents(self):
-    #     self.textbox = QTextEdit(self)
-    #     self.setReadOnly(True)
-    #     self.setLineWrapMode(QTextEdit.NoWrap)
+    def logComponents(self):
+        self.logLayout = QtWidgets.QGridLayout()
+        self.medRate = QLabel('Log of Values', self)
+        
+        self.logLayout.addWidget(self.medRate)
 
-    #     font = self.font()
-    #     font.setFamily("Verdana")
-    
-    #     font.setPointSize(10)
-    #     self.moveCursor(QTextCursor.End)
-    #     self.setCurrentFont(font)
-    #     self.insertPlainText(self.curMedRate)
+        self.curText = str(self.curMedRate) + "\n"
+        self.values = QLabel(self.curText, self)
 
-    #     scroll = self.verticalScrollBar()
-    #     scroll.setValue(sb.maximum())
+        self.scrollArea = QScrollArea()
+        vbar = self.scrollArea.verticalScrollBar()
+        vbar.setValue(vbar.maximum())
+        self.scrollArea.setWidget(self.values)
+        self.scrollArea.ensureWidgetVisible(self.values, 200, 200)
+        self.scrollArea.setWidgetResizable(True)
 
-    #     return self.textbox
+        self.logLayout.addWidget(self.scrollArea)
+
+        return self.logLayout
     
     def UIDropdownComponents(self):
         def actionSetParam():
@@ -327,19 +329,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self._start_plot()
     
     def actionOK(self):
-        equation = self.label.text()
-        self.label.setText("")
-        self.curMedRate = eval(equation)
-        self.savedTime = self.curTime
-        self.initVal = [self.paramValues[-1]]
-        # self.reset = True
-
         try:
             equation = self.label.text()
             self.label.setText("")
             self.curMedRate = eval(equation)
             self.savedTime = self.curTime
             self.initVal = [self.paramValues[-1]]
+            self.curText = equation + "\n" + self.curText
+            self.values.setText(self.curText)
             # self.reset = True
         except:
             print("Invalid")
