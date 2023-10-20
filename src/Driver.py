@@ -41,6 +41,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                               "Blood Glucose": UsrParamModel,
                               "Oxygen Content": UsrParamModel}
 
+        self.targetMap = {"Blood Pressure": [80, 120],
+                              "Blood Glucose": [80, 120],
+                              "Oxygen Content": [80, 120]}
+
         # maps medication name to associated model
         self.medModelMap = {"a": MedModel,
                               "b": MedModel,
@@ -68,7 +72,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         # self.layout.addWidget(NavigationToolbar(self.dynamic_canvas, self))
 
         # create axes for graphing parameter and medication values
-        self._param_ax = self.dynamic_canvas.figure.subplots()
+        self._param_ax = self.dynamic_canvas.figure.add_subplot(111)
         self._med_ax = self._param_ax.twinx()
         self._param_ax.set_xlim(0, 60)
 
@@ -78,7 +82,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         # self.layout.addLayout(self.logComponents(), 0, 1)
 
     def _start_plot(self):
-
         self.curTime = 0  # current time
         self.initVal = [130]  # initial parameter value
         self.savedTime = 0  # time at which to start integrating
@@ -123,9 +126,15 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self._med_ax.set_xlim(self.curTime - 59, self.curTime + 1)
             self._param_ax.plot(self.times[-60:], self.paramValues[-60:], color='b')
             self._med_ax.plot(self.times[-60:], self.medValues[-60:], color='r')
+
+            self._param_ax.plot(self.times[-60:], [self.targetLow] * 60, color='k', linestyle='dashed')
+            self._param_ax.plot(self.times[-60:], [self.targetHigh] * 60, color='k', linestyle='dashed')
         else:
             self._param_ax.plot(self.times, self.paramValues, color='b')
             self._med_ax.plot(self.times, self.medValues, color='r')
+
+            self._param_ax.plot([self.targetLow] * 60, color='k', linestyle='dashed')
+            self._param_ax.plot([self.targetHigh] * 60, color='k', linestyle='dashed')
 
         self._param_line.figure.canvas.draw()
         self._med_line.figure.canvas.draw()
@@ -265,7 +274,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     #     font.setPointSize(10)
     #     self.moveCursor(QTextCursor.End)
     #     self.setCurrentFont(font)
-    #     self.insertPlainText(self.curMedRate + "/n")
+    #     self.insertPlainText(self.curMedRate)
 
     #     scroll = self.verticalScrollBar()
     #     scroll.setValue(sb.maximum())
@@ -312,10 +321,20 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.started = True
             self.param = self.combobox1.currentText()
             self.medication = self.combobox2.currentText()
-            self.paramModel = self.paramModelMap[self.param](self.param, self.medModelMap[self.medication], 0)
+            self.targetLow =  self.targetMap[self.param][0]
+            self.targetHigh = self.targetMap[self.param][1]
+            self.paramModel = self.paramModelMap[self.param](self.param, 0)
             self._start_plot()
     
     def actionOK(self):
+        equation = self.label.text()
+        self.label.setText("")
+        self.paramModel.updateRate(eval(equation))
+        self.curMed = eval(equation)
+        self.savedTime = self.curTime
+        self.initVal = [self.paramValues[-1]]
+        # self.reset = True
+
         try:
             equation = self.label.text()
             self.label.setText("")
@@ -325,7 +344,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             # self.reset = True
         except:
             print("Invalid")
-
 
     def action_point(self):
         # appending label text
