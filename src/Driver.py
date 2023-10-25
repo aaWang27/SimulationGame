@@ -1,3 +1,4 @@
+from random import randint
 import sys
 import time
 
@@ -14,16 +15,16 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
-import SimpleMedicationModel as MedModel
 from SimpleMedicationModel import SimpleMedicationModel as MedModel
 from SimpleParameterModel import SimpleParameterModel as ParamModel
 from UserParameterModel import UserParameterModel as UsrParamModel
-
+from ComputerParameterModel import ComputerParameterModel as CompParamModel
 
 class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self._main = QtWidgets.QWidget()
+        self.metricsWindow = None
 
         # initialize parameter and medication name variables
         self.param = None
@@ -33,12 +34,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.decayRate = MedModel.bodyMedicationADecay
 
         self.medicationMap = {"Blood Pressure": ["a", "b"],
-                              "Blood Glucose": ["c", "d"],
+                              "Blood Glucose": ["a", "d"],
                               "Oxygen Content": ["e", "f"]}
 
         # maps parameter name to associated model
         self.paramModelMap = {"Blood Pressure": UsrParamModel,
-                              "Blood Glucose": UsrParamModel,
+                              "Blood Glucose": CompParamModel,
                               "Oxygen Content": UsrParamModel}
 
         self.targetMap = {"Blood Pressure": [80, 120],
@@ -53,6 +54,15 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                               "e": MedModel,
                               "f": MedModel}
 
+        # Metrics
+        # Time in interval
+        # Time to get to interval
+        # Variance?
+        # Mean blood pressure over time interval?
+        # Percentage of absolute values of derivatives within a certain interval
+
+        self.alpha = 1.2 # >=1
+
         # create GUI window
         self.setCentralWidget(self._main)
         self.layout = QtWidgets.QGridLayout(self._main)
@@ -65,6 +75,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.medValues = []  # array to store values of medication over time
         self.times = []  # array to store timestamps
         self.started = False  # whether the simulation has been started
+        self.stopTime = 15
 
         # create canvas to hold live graph
         self.dynamic_canvas = FigureCanvas(Figure(figsize=(10, 6)))
@@ -80,6 +91,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.layout.addLayout(self.keypadComponents(), 1, 1)
         self.layout.addLayout(self.UIDropdownComponents(), 0, 0)
         self.layout.addLayout(self.logComponents(), 1, 0)
+        
 
     def _start_plot(self):
         self.curTime = 0  # current time
@@ -97,8 +109,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         # initialize plot
         self._param_ax.set_xlabel('Time')
-        self._param_ax.set_ylabel(self.paramModel.get_param_name())
-        self._med_ax.set_ylabel('Medication Rate')
+        self._param_ax.set_ylabel(self.paramModel.get_param_name(), color = 'b')
+        self._med_ax.set_ylabel('Total Medication In the Body', color = 'r')
         self._param_line, = self._param_ax.plot(sol.t, sol.y, color='b')
         self._med_line, = self._med_ax.plot(self.times, self.medValues, color='r')
         self._timer = self.dynamic_canvas.new_timer()
@@ -109,36 +121,40 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         # update time
         self.curTime += 1
 
-        # solve IVP to get current parameter value
-        sol = self.paramModel.solve_ivp([self.savedTime, self.curTime], self.initVal)
+        if self.curTime<=self.stopTime:
+            # solve IVP to get current parameter value
+            sol = self.paramModel.solve_ivp([self.savedTime, self.curTime], self.initVal)
 
-        # update time, parameter values, and medication values
-        self.times.append(self.curTime)
-        self.paramValues.append(sol.y[-1])
-        self.medValues.append(self.medValues[-1] + float(self.curMedRate)/60 + self.decayRate(self.medValues[-1]))
-        self.paramModel.updateDosage(self.medValues[-1])
-        self.y = sol.y
+            # update time, parameter values, and medication values
+            self.times.append(self.curTime)
+            self.paramValues.append(sol.y[-1])
+            self.medValues.append(self.medValues[-1] + float(self.curMedRate)/60 + self.decayRate(self.medValues[-1]))
+            self.paramModel.updateDosage(self.medValues[-1])
+            self.y = sol.y
 
-        # if more than 60 seconds have passed since the start of the
-        # simulation, shift the plot to only display the last 60 seconds
-        if self.curTime > 60:
-            self._param_ax.set_xlim(self.curTime - 59, self.curTime + 1)
-            self._med_ax.set_xlim(self.curTime - 59, self.curTime + 1)
-            self._param_ax.plot(self.times[-60:], self.paramValues[-60:], color='b')
-            self._med_ax.plot(self.times[-60:], self.medValues[-60:], color='r')
+            # if more than 60 seconds have passed since the start of the
+            # simulation, shift the plot to only display the last 60 seconds
+            if self.curTime > 60:
+                self._param_ax.set_xlim(self.curTime - 59, self.curTime + 1)
+                self._med_ax.set_xlim(self.curTime - 59, self.curTime + 1)
+                self._param_ax.plot(self.times[-60:], self.paramValues[-60:], color='b')
+                self._med_ax.plot(self.times[-60:], self.medValues[-60:], color='r')
 
-            self._param_ax.plot(self.times[-60:], [self.targetLow] * 60, color='k', linestyle='dashed')
-            self._param_ax.plot(self.times[-60:], [self.targetHigh] * 60, color='k', linestyle='dashed')
-        else:
-            self._param_ax.plot(self.times, self.paramValues, color='b')
-            self._med_ax.plot(self.times, self.medValues, color='r')
+                self._param_ax.plot(self.times[-60:], [self.targetLow] * 60, color='k', linestyle='dashed')
+                self._param_ax.plot(self.times[-60:], [self.targetHigh] * 60, color='k', linestyle='dashed')
+            else:
+                self._param_ax.plot(self.times, self.paramValues, color='b')
+                self._med_ax.plot(self.times, self.medValues, color='r')
 
-            self._param_ax.plot([self.targetLow] * 60, color='k', linestyle='dashed')
-            self._param_ax.plot([self.targetHigh] * 60, color='k', linestyle='dashed')
+                self._param_ax.plot([self.targetLow] * 60, color='k', linestyle='dashed')
+                self._param_ax.plot([self.targetHigh] * 60, color='k', linestyle='dashed')
 
-        self._param_line.figure.canvas.draw()
-        self._med_line.figure.canvas.draw()
+            self._param_line.figure.canvas.draw()
+            self._med_line.figure.canvas.draw()
 
+        if self.curTime == self.stopTime and self.metricsWindow==None:
+            self.metricsWindow = MetricsWindow()
+            self.metricsWindow.show()
 
     def keypadComponents(self):
         # create a layout to hold the keypad buttons
@@ -265,7 +281,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     def logComponents(self):
         self.logLayout = QtWidgets.QGridLayout()
-        self.medRate = QLabel('Log of Values', self)
+        self.medRate = QLabel('Log of Medication Rates', self)
         
         self.logLayout.addWidget(self.medRate)
 
@@ -325,7 +341,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.medication = self.combobox2.currentText()
             self.targetLow =  self.targetMap[self.param][0]
             self.targetHigh = self.targetMap[self.param][1]
-            self.paramModel = self.paramModelMap[self.param](self.param, 0)
+            self.paramModel = self.paramModelMap[self.param](self.param, 0, self.alpha, 100)
             self._start_plot()
     
     def actionOK(self):
@@ -405,8 +421,37 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         text = self.label.text()
         print(text[:len(text)-1])
         self.label.setText(text[:len(text)-1])
-        
 
+class MetricsWindow(QtWidgets.QMainWindow):
+    def __init__(self, userVals, lowBound, highBound):
+        super().__init__()
+        layout = QVBoxLayout()
+        self.label = QLabel("Metrics")
+        layout.addWidget(self.label)
+        
+        self.paramValues = userVals
+        self.targetLow = lowBound
+        self.targetHigh = highBound
+
+        self.timeInInterval = QLabel("Time In Interval: {}".format(self.calc_time_in_interval()))
+        self.timeUntilInterval = QLabel("Time Until Interval: {}".format(self.calc_time_until_interval()))
+        layout.addWidget(self.timeInInterval)
+        layout.addWidget(self.timeUntilInterval)
+        
+        self.setLayout(layout)
+
+    def calc_time_in_interval(self):
+        temp = np.array(self.paramValues)
+        return sum(np.logical_and(temp>=self.targetLow, temp<=self.targetHigh))
+
+    def calc_time_until_interval(self):
+        temp = np.array(self.paramValues)
+        in_interval = np.where(np.logical_and(temp>=self.targetLow, temp<=self.targetHigh))
+        if len(in_interval)==0:
+            return -1
+        else:
+            return in_interval[0]
+        
 if __name__ == "__main__":
     # Check whether there is already a running QApplication (e.g., if running
     # from an IDE).
