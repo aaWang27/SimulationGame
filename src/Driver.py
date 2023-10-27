@@ -75,7 +75,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.medValues = []  # array to store values of medication over time
         self.times = []  # array to store timestamps
         self.started = False  # whether the simulation has been started
-        self.stopTime = 15
+        self.stopTime = 20
 
         # create canvas to hold live graph
         self.dynamic_canvas = FigureCanvas(Figure(figsize=(10, 6)))
@@ -134,26 +134,26 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
             # if more than 60 seconds have passed since the start of the
             # simulation, shift the plot to only display the last 60 seconds
-            if self.curTime > 60:
+            if self.curTime >= 60:
                 self._param_ax.set_xlim(self.curTime - 59, self.curTime + 1)
                 self._med_ax.set_xlim(self.curTime - 59, self.curTime + 1)
                 self._param_ax.plot(self.times[-60:], self.paramValues[-60:], color='b')
                 self._med_ax.plot(self.times[-60:], self.medValues[-60:], color='r')
 
-                self._param_ax.plot(self.times[-60:], [self.targetLow] * 60, color='k', linestyle='dashed')
-                self._param_ax.plot(self.times[-60:], [self.targetHigh] * 60, color='k', linestyle='dashed')
+                self._param_ax.plot(self.times[-60:], [self.targetLow] * 60, color='k')
+                self._param_ax.plot(self.times[-60:], [self.targetHigh] * 60, color='k')
             else:
                 self._param_ax.plot(self.times, self.paramValues, color='b')
                 self._med_ax.plot(self.times, self.medValues, color='r')
 
-                self._param_ax.plot([self.targetLow] * 60, color='k', linestyle='dashed')
-                self._param_ax.plot([self.targetHigh] * 60, color='k', linestyle='dashed')
+                self._param_ax.plot([self.targetLow] * 60, color='k')
+                self._param_ax.plot([self.targetHigh] * 60, color='k')
 
             self._param_line.figure.canvas.draw()
             self._med_line.figure.canvas.draw()
 
         if self.curTime == self.stopTime and self.metricsWindow==None:
-            self.metricsWindow = MetricsWindow()
+            self.metricsWindow = MetricsWindow(self.paramValues, self.medValues, self.times, self.targetLow, self.targetHigh)
             self.metricsWindow.show()
 
     def keypadComponents(self):
@@ -287,6 +287,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.curText = str(self.curMedRate) + "\n"
         self.values = QLabel(self.curText, self)
+        self.values.setAlignment(Qt.AlignCenter)
 
         self.scrollArea = QScrollArea()
         vbar = self.scrollArea.verticalScrollBar()
@@ -419,34 +420,67 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def action_del(self):
         # clearing a single digit
         text = self.label.text()
-        print(text[:len(text)-1])
         self.label.setText(text[:len(text)-1])
 
 class MetricsWindow(QtWidgets.QMainWindow):
-    def __init__(self, userVals, lowBound, highBound):
+    def __init__(self, userVals, medVals, times, lowBound, highBound):
         super().__init__()
-        layout = QVBoxLayout()
-        self.label = QLabel("Metrics")
-        layout.addWidget(self.label)
-        
-        self.paramValues = userVals
+        self._main = QtWidgets.QWidget()
+        self.setCentralWidget(self._main)
+        self.layout = QtWidgets.QGridLayout(self._main)
+
+        self.paramValues = np.array(userVals)
+        self.medValues = np.array(medVals)
+        self.times = np.array(times)
         self.targetLow = lowBound
         self.targetHigh = highBound
 
-        self.timeInInterval = QLabel("Time In Interval: {}".format(self.calc_time_in_interval()))
-        self.timeUntilInterval = QLabel("Time Until Interval: {}".format(self.calc_time_until_interval()))
-        layout.addWidget(self.timeInInterval)
-        layout.addWidget(self.timeUntilInterval)
-        
-        self.setLayout(layout)
+        self.timeInIntervalLabel = QLabel("Time In Interval", self)
+        self.timeInIntervalMetric = QLabel(str(self.calc_time_in_interval()), self)
+        self.timeUntilIntervalLabel = QLabel("Time Until Interval", self)
+        self.timeUntilIntervalMetric = QLabel(str(self.calc_time_until_interval()), self)
+        self.title = QLabel("Metrics", self)
+        self.userTitle = QLabel("User Metrics", self)
+        self.computerTitle = QLabel("Algorithm Metrics", self)
+
+        self.title.setAlignment(Qt.AlignCenter)
+        self.userTitle.setAlignment(Qt.AlignCenter)
+        self.computerTitle.setAlignment(Qt.AlignCenter)
+        self.timeInIntervalLabel.setAlignment(Qt.AlignCenter)
+        self.timeInIntervalMetric.setAlignment(Qt.AlignCenter)
+        self.timeUntilIntervalLabel.setAlignment(Qt.AlignCenter)
+        self.timeUntilIntervalMetric.setAlignment(Qt.AlignCenter)
+
+        self.layout.addWidget(self.title, 0, 0)
+        self.layout.addWidget(self.userTitle, 0, 1)
+        self.layout.addWidget(self.computerTitle, 0, 2)
+        self.layout.addWidget(self.timeInIntervalLabel, 1, 0)
+        self.layout.addWidget(self.timeInIntervalMetric, 1, 1)
+        self.layout.addWidget(self.timeUntilIntervalLabel, 2, 0)
+        self.layout.addWidget(self.timeUntilIntervalMetric, 2, 1)
+
+        self.user_canvas = FigureCanvas(Figure(figsize=(10, 6)))
+
+        # create axes for graphing parameter and medication values
+        self._param_ax = self.user_canvas.figure.add_subplot(111)
+        self._med_ax = self._param_ax.twinx()
+        self._param_ax.set_xlabel('Time')
+        self._param_ax.set_ylabel('Blood Pressure', color='b')
+        self._med_ax.set_ylabel('Total Medication In the Body', color='r')
+        self._param_ax.set_xlim(0, self.times[-1])
+        self._param_ax.plot(self.times, self.paramValues, color='b')
+        self._med_ax.plot(self.times, self.medValues, color='r')
+        self._param_ax.plot(self.times, [self.targetLow] * len(self.times), color='k', linestyle='dashed')
+        self._param_ax.plot(self.times, [self.targetHigh] * len(self.times), color='k', linestyle='dashed')
+
+        self.layout.addWidget(self.user_canvas, 3, 1, 1, 1)
 
     def calc_time_in_interval(self):
-        temp = np.array(self.paramValues)
-        return sum(np.logical_and(temp>=self.targetLow, temp<=self.targetHigh))
+        return sum(np.logical_and(self.paramValues>=self.targetLow, self.paramValues<=self.targetHigh))
 
     def calc_time_until_interval(self):
-        temp = np.array(self.paramValues)
-        in_interval = np.where(np.logical_and(temp>=self.targetLow, temp<=self.targetHigh))
+        in_interval = np.where(np.logical_and(self.paramValues>=self.targetLow, self.paramValues<=self.targetHigh))[0]
+
         if len(in_interval)==0:
             return -1
         else:
