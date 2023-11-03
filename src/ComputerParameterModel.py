@@ -22,7 +22,7 @@ class ComputerParameterModel:
         dosageRate = 0.1 * (y - self.target)
         print(self.target)
         if (dosageRate < 0): dosageRate = 0
-        return (dosageRate + parameterComponent) * y
+        return (-dosageRate + parameterComponent) * y
 
     def solve_ivp(self, tRange, y0):
         sol = solve_ivp(self.userModel, t_span=tRange, y0=y0, t_eval=np.linspace(tRange[0], tRange[1], tRange[1]+1))

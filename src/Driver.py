@@ -34,16 +34,16 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.decayRate = MedModel.bodyMedicationADecay
 
         self.medicationMap = {"Blood Pressure": ["a", "b"],
-                              "Blood Glucose": ["a", "d"],
+                              "Blood Pressure Computer": ["a", "d"],
                               "Oxygen Content": ["e", "f"]}
 
         # maps parameter name to associated model
         self.paramModelMap = {"Blood Pressure": UsrParamModel,
-                              "Blood Glucose": CompParamModel,
+                              "Blood Pressure Computer": CompParamModel,
                               "Oxygen Content": UsrParamModel}
 
         self.targetMap = {"Blood Pressure": [80, 120],
-                              "Blood Glucose": [80, 120],
+                              "Blood Pressure Computer": [80, 120],
                               "Oxygen Content": [80, 120]}
 
         # maps medication name to associated model
@@ -315,7 +315,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.paramLabel = QLabel('Choose Parameter', self)
         self.combobox1 = QComboBox()
         self.combobox1.addItem('Blood Pressure')
-        self.combobox1.addItem('Blood Glucose')
+        self.combobox1.addItem('Blood Pressure Computer')
         self.combobox1.addItem('Oxygen Content')
         self.combobox1.activated.connect(actionSetParam)
 
