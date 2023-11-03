@@ -75,7 +75,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.medValues = []  # array to store values of medication over time
         self.times = []  # array to store timestamps
         self.started = False  # whether the simulation has been started
-        self.stopTime = 20
+        self.stopTime = 70
 
         # create canvas to hold live graph
         self.dynamic_canvas = FigureCanvas(Figure(figsize=(10, 6)))
