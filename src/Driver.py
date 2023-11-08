@@ -42,8 +42,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                               "Blood Pressure Computer": CompParamModel,
                               "Oxygen Content": UsrParamModel}
 
-        self.targetMap = {"Blood Pressure": [80, 120],
-                              "Blood Pressure Computer": [80, 120],
+        self.targetMap = {"Blood Pressure": [95, 105],
+                              "Blood Pressure Computer": [95, 105],
                               "Oxygen Content": [80, 120]}
 
         # maps medication name to associated model
@@ -95,7 +95,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     def _start_plot(self):
         self.curTime = 0  # current time
-        self.initVal = [130]  # initial parameter value
+        self.initVal = [180]  # initial parameter value
         self.savedTime = 0  # time at which to start integrating
         self.curMed = 0  # current medication value
 
@@ -128,8 +128,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             # update time, parameter values, and medication values
             self.times.append(self.curTime)
             self.paramValues.append(sol.y[-1])
+            self.curMedRate = self.paramModel.getDosage()
             self.medValues.append(self.medValues[-1] + float(self.curMedRate)/60 + self.decayRate(self.medValues[-1]))
-            self.paramModel.updateDosage(self.medValues[-1])
+            # self.paramModel.updateDosage(self.medValues[-1])
             self.y = sol.y
 
             # if more than 60 seconds have passed since the start of the
@@ -349,7 +350,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         try:
             equation = self.label.text()
             self.label.setText("")
-            self.curMedRate = eval(equation)
+            self.paramModel.updateDosage(eval(equation))
+            # self.curMedRate = eval(equation)
             self.savedTime = self.curTime
             self.initVal = [self.paramValues[-1]]
             self.curText = equation + "\n" + self.curText

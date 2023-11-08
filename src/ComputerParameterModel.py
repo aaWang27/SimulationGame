@@ -15,6 +15,9 @@ class ComputerParameterModel:
     
     def updateDosage(self, newDosage):
         self.dosage = newDosage
+    
+    def getDosage(self):
+        return self.dosage
 
     def userModel(self, t, y):
         parameterComponent = random.uniform(-0.005*self.alpha, 0.01*self.alpha)
@@ -22,6 +25,8 @@ class ComputerParameterModel:
         dosageRate = 0.1 * (y - self.target)
         print(self.target)
         if (dosageRate < 0): dosageRate = 0
+        if (dosageRate > 0.025): dosageRate = 0.025
+        self.updateDosage(dosageRate)
         return (-dosageRate + parameterComponent) * y
 
     def solve_ivp(self, tRange, y0):

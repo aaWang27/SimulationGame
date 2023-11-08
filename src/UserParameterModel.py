@@ -14,6 +14,9 @@ class UserParameterModel:
     
     def updateDosage(self, newDosage):
         self.dosage = newDosage
+    
+    def getDosage(self):
+        return self.dosage
 
     def userModel(self, t, y):
         parameterComponent = random.uniform(-0.005*self.alpha, 0.01*self.alpha)
