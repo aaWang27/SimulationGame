@@ -39,9 +39,13 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         # maps parameter name to associated model
         self.paramModelMap = {"Blood Pressure": UsrParamModel,
-                              "Blood Pressure Computer": CompParamModel,
+                              "Blood Pressure Computer": UsrParamModel,
                               "Oxygen Content": UsrParamModel}
 
+        self.computerModelMap = {"Blood Pressure": CompParamModel,
+                              "Blood Pressure Computer": CompParamModel,
+                              "Oxygen Content": CompParamModel}
+        
         self.targetMap = {"Blood Pressure": [95, 105],
                               "Blood Pressure Computer": [95, 105],
                               "Oxygen Content": [80, 120]}
@@ -77,6 +81,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.started = False  # whether the simulation has been started
         self.stopTime = 70
 
+        self.computerParamModel = None
+        self.computerParamValues = []
+        self.computerMedValues = []
+
         # create canvas to hold live graph
         self.dynamic_canvas = FigureCanvas(Figure(figsize=(10, 6)))
         self.layout.addWidget(self.dynamic_canvas, 0, 1)
@@ -91,21 +99,30 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.layout.addLayout(self.keypadComponents(), 1, 1)
         self.layout.addLayout(self.UIDropdownComponents(), 0, 0)
         self.layout.addLayout(self.logComponents(), 1, 0)
+        self.layout.addLayout(self.uploadModelComponent(), 1,2)
         
 
     def _start_plot(self):
         self.curTime = 0  # current time
         self.initVal = [180]  # initial parameter value
+        self.computerInitVal = [180]
         self.savedTime = 0  # time at which to start integrating
         self.curMed = 0  # current medication value
 
+        self.computerCurMed = 0
+        self.computerSavedTime = 0
+        
         # update time, parameter values, and medication values
         self.times.append(self.curTime)
         self.paramValues.append(self.initVal[0])
         self.medValues.append(0)
 
+        self.computerParamValues.append(self.computerInitVal[0])
+        self.computerMedValues.append(0)
+
         # solve IVP to get current parameter value
         sol = self.paramModel.solve_ivp([self.savedTime, self.curTime], self.initVal)
+        computerSol = self.computerParamModel.solve_ivp([self.computerSavedTime, self.curTime], self.computerInitVal)
 
         # initialize plot
         self._param_ax.set_xlabel('Time')
@@ -124,6 +141,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         if self.curTime<=self.stopTime:
             # solve IVP to get current parameter value
             sol = self.paramModel.solve_ivp([self.savedTime, self.curTime], self.initVal)
+            computerSol = self.computerParamModel.solve_ivp([self.computerSavedTime, self.curTime], self.computerInitVal)
 
             # update time, parameter values, and medication values
             self.times.append(self.curTime)
@@ -132,6 +150,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.medValues.append(self.medValues[-1] + float(self.curMedRate)/60 + self.decayRate(self.medValues[-1]))
             # self.paramModel.updateDosage(self.medValues[-1])
             self.y = sol.y
+            
+            self.computerParamValues.append(computerSol.y[-1])
+            self.computerCurMedRate = self.computerParamModel.getDosage()
+            self.computerMedValues.append(self.computerMedValues[-1] + float(self.computerCurMedRate) / 60 + self.decayRate(self.computerMedValues[-1]))
 
             # if more than 60 seconds have passed since the start of the
             # simulation, shift the plot to only display the last 60 seconds
@@ -154,7 +176,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self._med_line.figure.canvas.draw()
 
         if self.curTime == self.stopTime and self.metricsWindow==None:
-            self.metricsWindow = MetricsWindow(self.paramValues, self.medValues, self.times, self.targetLow, self.targetHigh)
+            self.metricsWindow = MetricsWindow(self.paramValues, self.medValues, self.computerParamValues,
+                                               self.computerMedValues, self.times, self.targetLow, self.targetHigh)
             self.metricsWindow.show()
 
     def keypadComponents(self):
@@ -288,7 +311,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.curText = str(self.curMedRate) + "\n"
         self.values = QLabel(self.curText, self)
-        self.values.setAlignment(Qt.AlignCenter)
+        self.values.setAlignment(Qt.AlignRight)
 
         self.scrollArea = QScrollArea()
         vbar = self.scrollArea.verticalScrollBar()
@@ -300,6 +323,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.logLayout.addWidget(self.scrollArea)
 
         return self.logLayout
+    
     
     def UIDropdownComponents(self):
         def actionSetParam():
@@ -335,6 +359,24 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 
         return self.dropdownLayout
 
+    file_dialog = None
+
+    def uploadModelComponent(self):
+        self.uploadModelButtonLayout = QtWidgets.QGridLayout()
+        file_dialog = QFileDialog(self)
+            
+        self.uploadModelButton = QPushButton("Upload Model", self)
+        self.uploadModelButton.clicked.connect(lambda: self.getFile(file_dialog))
+        # self.uploadModelButton.clicked.connect(self.uploadToDict)
+        self.uploadModelButtonLayout.addWidget(self.uploadModelButton, 0, 0)
+        return self.uploadModelButtonLayout
+
+    def getFile(self, fd):
+        file_path, _ = fd.getOpenFileName(self, 'Open File', '', 'All Files (*);;Text Files (*.txt)')
+        print(file_path)
+        self.uploadedModel = 
+        return file_path
+
     def startSimulation(self):
         # starts the simulation
         if self.model_selected and not self.started:
@@ -344,6 +386,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.targetLow =  self.targetMap[self.param][0]
             self.targetHigh = self.targetMap[self.param][1]
             self.paramModel = self.paramModelMap[self.param](self.param, 0, self.alpha, 100)
+            self.computerParamModel = self.computerModelMap[self.param](self.param, 0, self.alpha, 100)
             self._start_plot()
     
     def actionOK(self):
@@ -425,7 +468,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.label.setText(text[:len(text)-1])
 
 class MetricsWindow(QtWidgets.QMainWindow):
-    def __init__(self, userVals, medVals, times, lowBound, highBound):
+    def __init__(self, userVals, medVals, computerVals, computerMedVals, times, lowBound, highBound):
         super().__init__()
         self._main = QtWidgets.QWidget()
         self.setCentralWidget(self._main)
@@ -433,14 +476,27 @@ class MetricsWindow(QtWidgets.QMainWindow):
 
         self.paramValues = np.array(userVals)
         self.medValues = np.array(medVals)
+        self.computerParamValues = np.array(computerVals)
+        self.computerMedValues = np.array(computerMedVals)
         self.times = np.array(times)
         self.targetLow = lowBound
         self.targetHigh = highBound
 
         self.timeInIntervalLabel = QLabel("Time In Interval", self)
-        self.timeInIntervalMetric = QLabel(str(self.calc_time_in_interval()), self)
+        self.timeInIntervalMetric = QLabel(
+            str(self.calc_time_in_interval(self.paramValues, self.targetLow, self.targetHigh)), self)
         self.timeUntilIntervalLabel = QLabel("Time Until Interval", self)
-        self.timeUntilIntervalMetric = QLabel(str(self.calc_time_until_interval()), self)
+        self.timeUntilIntervalMetric = QLabel(
+            str(self.calc_time_until_interval(self.paramValues, self.targetLow, self.targetHigh)), self)
+        self.derivativeLabel = QLabel("Average Absolute Derivative", self)
+        self.derivativeMetric = QLabel(str(self.calc_average_derivative(self.paramValues)), self)
+
+        self.timeInIntervalMetricComputer = QLabel(
+            str(self.calc_time_in_interval(self.computerParamValues, self.targetLow, self.targetHigh)), self)
+        self.timeUntilIntervalMetricComputer = QLabel(
+            str(self.calc_time_until_interval(self.computerParamValues, self.targetLow, self.targetHigh)), self)
+        self.derivativeMetricComputer = QLabel(str(self.calc_average_derivative(self.computerParamValues)), self)
+    
         self.title = QLabel("Metrics", self)
         self.userTitle = QLabel("User Metrics", self)
         self.computerTitle = QLabel("Algorithm Metrics", self)
@@ -450,16 +506,25 @@ class MetricsWindow(QtWidgets.QMainWindow):
         self.computerTitle.setAlignment(Qt.AlignCenter)
         self.timeInIntervalLabel.setAlignment(Qt.AlignCenter)
         self.timeInIntervalMetric.setAlignment(Qt.AlignCenter)
+        self.timeInIntervalMetricComputer.setAlignment(Qt.AlignCenter)
         self.timeUntilIntervalLabel.setAlignment(Qt.AlignCenter)
         self.timeUntilIntervalMetric.setAlignment(Qt.AlignCenter)
+        self.timeUntilIntervalMetricComputer.setAlignment(Qt.AlignCenter)
+        self.derivativeMetric.setAlignment(Qt.AlignCenter)
+        self.derivativeMetricComputer.setAlignment(Qt.AlignCenter)
 
         self.layout.addWidget(self.title, 0, 0)
         self.layout.addWidget(self.userTitle, 0, 1)
         self.layout.addWidget(self.computerTitle, 0, 2)
         self.layout.addWidget(self.timeInIntervalLabel, 1, 0)
         self.layout.addWidget(self.timeInIntervalMetric, 1, 1)
+        self.layout.addWidget(self.timeInIntervalMetricComputer, 1, 2)
         self.layout.addWidget(self.timeUntilIntervalLabel, 2, 0)
         self.layout.addWidget(self.timeUntilIntervalMetric, 2, 1)
+        self.layout.addWidget(self.timeUntilIntervalMetricComputer, 2, 2)
+        self.layout.addWidget(self.derivativeLabel, 3, 0)
+        self.layout.addWidget(self.derivativeMetric, 3, 1)
+        self.layout.addWidget(self.derivativeMetricComputer, 3, 2)
 
         self.user_canvas = FigureCanvas(Figure(figsize=(10, 6)))
 
@@ -475,18 +540,38 @@ class MetricsWindow(QtWidgets.QMainWindow):
         self._param_ax.plot(self.times, [self.targetLow] * len(self.times), color='k', linestyle='dashed')
         self._param_ax.plot(self.times, [self.targetHigh] * len(self.times), color='k', linestyle='dashed')
 
-        self.layout.addWidget(self.user_canvas, 3, 1, 1, 1)
+        self.layout.addWidget(self.user_canvas, 4, 1, 1, 1)
 
-    def calc_time_in_interval(self):
-        return sum(np.logical_and(self.paramValues>=self.targetLow, self.paramValues<=self.targetHigh))
+        # computer graph
+        self.computer_canvas = FigureCanvas(Figure(figsize=(10, 6)))
 
-    def calc_time_until_interval(self):
-        in_interval = np.where(np.logical_and(self.paramValues>=self.targetLow, self.paramValues<=self.targetHigh))[0]
+        self._computer_param_ax = self.computer_canvas.figure.add_subplot(111)
+        self._computer_med_ax = self._computer_param_ax.twinx()
+        self._computer_param_ax.set_xlabel('Time')
+        self._computer_param_ax.set_ylabel('Blood Pressure', color='b')
+        self._computer_med_ax.set_ylabel('Total Medication In the Body', color='r')
+        self._computer_param_ax.set_xlim(0, self.times[-1])
+        self._computer_param_ax.plot(self.times, self.computerParamValues, color='b')
+        self._computer_med_ax.plot(self.times, self.computerMedValues, color='r')
+        self._computer_param_ax.plot(self.times, [self.targetLow] * len(self.times), color='k', linestyle='dashed')
+        self._computer_param_ax.plot(self.times, [self.targetHigh] * len(self.times), color='k', linestyle='dashed')
 
-        if len(in_interval)==0:
+        self.layout.addWidget(self.computer_canvas, 4, 2, 1, 1)
+
+    def calc_time_in_interval(self, paramValues, targetLow, targetHigh):
+        return sum(np.logical_and(paramValues >= targetLow, paramValues <= targetHigh))
+
+    def calc_time_until_interval(self, paramValues, targetLow, targetHigh):
+        in_interval = np.where(np.logical_and(paramValues >= targetLow, paramValues <= targetHigh))[0]
+
+        if len(in_interval) == 0:
             return -1
         else:
             return in_interval[0]
+    
+    def calc_average_derivative(self, paramValues):
+        diff = np.gradient(paramValues, 1)
+        return np.sum(np.abs(diff))
         
 if __name__ == "__main__":
     # Check whether there is already a running QApplication (e.g., if running
