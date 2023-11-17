@@ -8,6 +8,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import \
     NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
+from scipy.integrate import solve_ivp
 
 # importing libraries
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -20,6 +21,11 @@ from SimpleParameterModel import SimpleParameterModel as ParamModel
 from UserParameterModel import UserParameterModel as UsrParamModel
 from ComputerParameterModel import ComputerParameterModel as CompParamModel
 
+# new
+from BloodPressureModel import BloodPresssureModel
+from MedicationAModel import MedicationAModel
+from MedicationAComputerModel import MedicationAComputerModel
+
 class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
@@ -30,15 +36,18 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.param = None
         self.medication = None
         self.curMedRate = 0
+        self.composedModel = None
 
         self.decayRate = MedModel.bodyMedicationADecay
 
         self.medicationMap = {"Blood Pressure": ["a", "b"],
+                              "Blood Pressure 2": ["a", "b"],
                               "Blood Pressure Computer": ["a", "d"],
                               "Oxygen Content": ["e", "f"]}
 
         # maps parameter name to associated model
         self.paramModelMap = {"Blood Pressure": UsrParamModel,
+                              "Blood Pressure 2": BloodPresssureModel,
                               "Blood Pressure Computer": UsrParamModel,
                               "Oxygen Content": UsrParamModel}
 
@@ -47,16 +56,26 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                               "Oxygen Content": CompParamModel}
         
         self.targetMap = {"Blood Pressure": [95, 105],
+                          "Blood Pressure 2": [95, 105],
                               "Blood Pressure Computer": [95, 105],
                               "Oxygen Content": [80, 120]}
 
         # maps medication name to associated model
-        self.medModelMap = {"a": MedModel,
+        self.medModelMap = {"a": MedicationAModel,
                               "b": MedModel,
                               "c": MedModel,
                               "d": MedModel,
                               "e": MedModel,
                               "f": MedModel}
+    
+        self.medModelMap = {"a": MedicationAComputerModel,
+                              "b": MedModel,
+                              "c": MedModel,
+                              "d": MedModel,
+                              "e": MedModel,
+                              "f": MedModel}
+
+        self.uploadedModelPath = None
 
         # Metrics
         # Time in interval
@@ -76,6 +95,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.paramModel = None  # parameter model being used
         self.paramValues = []  # array to store values of parameter over time
+        self.medModel = None
         self.medValues = []  # array to store values of medication over time
         self.times = []  # array to store timestamps
         self.started = False  # whether the simulation has been started
@@ -100,7 +120,31 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.layout.addLayout(self.UIDropdownComponents(), 0, 0)
         self.layout.addLayout(self.logComponents(), 1, 0)
         self.layout.addLayout(self.uploadModelComponent(), 1,2)
-        
+        self.layout.addLayout(self.instructionPage(), 0,2)
+
+    def composeModels(self, pm, mm):
+        return lambda t_, y_: pm.parameterModel(t_, y_) + mm.medModel(t_, y_)
+
+    def solve_ivp_here(self, tRange, y0, composedModel):
+        sol = solve_ivp(composedModel, t_span=tRange, y0=y0, t_eval=np.linspace(tRange[0], tRange[1], tRange[1]+1))
+
+        # print(sol.t)
+        if(len(sol.t)>0):
+            sol.y = sol.y.flatten()
+        # print(sol.y)
+        #
+        # # Create the graph
+        # plt.plot(sol.t, sol.y)
+        #
+        # # Add labels and a title
+        # plt.xlabel('Time')
+        # plt.ylabel(self.param)
+        # plt.title(self.param + ' vs. Time')
+        #
+        # # Display the graph
+        # plt.show()
+
+        return sol
 
     def _start_plot(self):
         self.curTime = 0  # current time
@@ -114,6 +158,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         
         # update time, parameter values, and medication values
         self.times.append(self.curTime)
+
         self.paramValues.append(self.initVal[0])
         self.medValues.append(0)
 
@@ -121,8 +166,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.computerMedValues.append(0)
 
         # solve IVP to get current parameter value
-        sol = self.paramModel.solve_ivp([self.savedTime, self.curTime], self.initVal)
-        computerSol = self.computerParamModel.solve_ivp([self.computerSavedTime, self.curTime], self.computerInitVal)
+        sol = self.solve_ivp_here([self.savedTime, self.curTime], self.initVal, self.composedModel)
+        computerSol = self.solve_ivp_here([self.savedTime, self.curTime], self.initVal, self.composedComputerModel)
 
         # initialize plot
         self._param_ax.set_xlabel('Time')
@@ -140,20 +185,20 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         if self.curTime<=self.stopTime:
             # solve IVP to get current parameter value
-            sol = self.paramModel.solve_ivp([self.savedTime, self.curTime], self.initVal)
-            computerSol = self.computerParamModel.solve_ivp([self.computerSavedTime, self.curTime], self.computerInitVal)
+            sol = self.solve_ivp_here([self.savedTime, self.curTime], self.initVal, self.composedModel)
+            # computerSol = self.computerParamModel.solve_ivp([self.computerSavedTime, self.curTime], self.computerInitVal)
 
             # update time, parameter values, and medication values
             self.times.append(self.curTime)
             self.paramValues.append(sol.y[-1])
-            self.curMedRate = self.paramModel.getDosage()
+            # self.curMedRate = self.medModel.getDosage()
             self.medValues.append(self.medValues[-1] + float(self.curMedRate)/60 + self.decayRate(self.medValues[-1]))
-            # self.paramModel.updateDosage(self.medValues[-1])
+            self.medModel.updateDosage(self.medValues[-1])
             self.y = sol.y
             
-            self.computerParamValues.append(computerSol.y[-1])
-            self.computerCurMedRate = self.computerParamModel.getDosage()
-            self.computerMedValues.append(self.computerMedValues[-1] + float(self.computerCurMedRate) / 60 + self.decayRate(self.computerMedValues[-1]))
+            # self.computerParamValues.append(computerSol.y[-1])
+            # self.computerCurMedRate = self.computerParamModel.getDosage()
+            # self.computerMedValues.append(self.computerMedValues[-1] + float(self.computerCurMedRate) / 60 + self.decayRate(self.computerMedValues[-1]))
 
             # if more than 60 seconds have passed since the start of the
             # simulation, shift the plot to only display the last 60 seconds
@@ -340,6 +385,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.paramLabel = QLabel('Choose Parameter', self)
         self.combobox1 = QComboBox()
         self.combobox1.addItem('Blood Pressure')
+        self.combobox1.addItem('Blood Pressure 2')
         self.combobox1.addItem('Blood Pressure Computer')
         self.combobox1.addItem('Oxygen Content')
         self.combobox1.activated.connect(actionSetParam)
@@ -374,8 +420,21 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def getFile(self, fd):
         file_path, _ = fd.getOpenFileName(self, 'Open File', '', 'All Files (*);;Text Files (*.txt)')
         print(file_path)
-        self.uploadedModel = 
+        self.uploadedModelPath = file_path
         return file_path
+
+    def instructionPage(self):
+        self.instructionPageLayout = QtWidgets.QGridLayout()
+
+        instructionsText = "The objective of this simulation is to bring a physiological parameter \nwithin a target range by adjusting the medication level.\nThe physiological parameter value is represented by the blue line, \nthe medication level is represented by the red line, \nand the target range is indicated by the area between the black lines on the graph.\nTo Start: \nSelect a physiological parameter to simulate, using either the dropdown menu to select an existing model, \nor the upload model button to use a custom model.\nSelect a medication to use.\nPress \"Start Simulation\" to begin the simulation. The simulation will run for 3 minutes.\n Use the keypad to control the medication level by clicking the numbers on the keypad.\nWhen the simulation is done running, a new page will display your results compared to the results of a computer algorithm."
+
+        self.instructionsTitle = QLabel('Instructions', self)
+        self.instructions = QLabel(instructionsText, self)
+        
+        self.instructionPageLayout.addWidget(self.instructionsTitle, 0, 0)
+        self.instructionPageLayout.addWidget(self.instructions, 1, 0)
+
+        return self.instructionPageLayout
 
     def startSimulation(self):
         # starts the simulation
@@ -385,16 +444,23 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.medication = self.combobox2.currentText()
             self.targetLow =  self.targetMap[self.param][0]
             self.targetHigh = self.targetMap[self.param][1]
+
             self.paramModel = self.paramModelMap[self.param](self.param, 0, self.alpha, 100)
-            self.computerParamModel = self.computerModelMap[self.param](self.param, 0, self.alpha, 100)
+            self.medModel = self.medModelMap[self.medication](self.medication, 0, self.alpha, 100)
+            self.medComputerModel = self.medModelComputerMap[self.medication](self.medication, 0, self.alpha, 100)
+            
+            self.composedModel = self.composeModels(self.paramModel, self.medModel)
+            self.composedComputerModel = self.composeModels(self.paramModel, self.medComputerModel)
+
+            # self.computerParamModel = self.computerModelMap[self.param](self.param, 0, self.alpha, 100)
             self._start_plot()
     
     def actionOK(self):
         try:
             equation = self.label.text()
             self.label.setText("")
-            self.paramModel.updateDosage(eval(equation))
-            # self.curMedRate = eval(equation)
+            # self.medModel.updateDosage(eval(equation))
+            self.curMedRate = eval(equation)
             self.savedTime = self.curTime
             self.initVal = [self.paramValues[-1]]
             self.curText = equation + "\n" + self.curText
@@ -486,8 +552,11 @@ class MetricsWindow(QtWidgets.QMainWindow):
         self.timeInIntervalMetric = QLabel(
             str(self.calc_time_in_interval(self.paramValues, self.targetLow, self.targetHigh)), self)
         self.timeUntilIntervalLabel = QLabel("Time Until Interval", self)
-        self.timeUntilIntervalMetric = QLabel(
-            str(self.calc_time_until_interval(self.paramValues, self.targetLow, self.targetHigh)), self)
+        if self.calc_time_until_interval(self.paramValues, self.targetLow, self.targetHigh)==-1:
+            self.timeUntilIntervalMetric = QLabel("N/A", self)
+        else:
+            self.timeUntilIntervalMetric = QLabel(
+                str(self.calc_time_until_interval(self.paramValues, self.targetLow, self.targetHigh)), self)
         self.derivativeLabel = QLabel("Average Absolute Derivative", self)
         self.derivativeMetric = QLabel(str(self.calc_average_derivative(self.paramValues)), self)
 
