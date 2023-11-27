@@ -4,32 +4,25 @@ from scipy.integrate import solve_ivp
 
 import matplotlib.pyplot as plt
 
-from SimpleMedicationModel import SimpleMedicationModel
 
-class MedicationAComputerModel:
-    def __init__(self, parameterName, dosage, alpha, target):
+class OxygenContent:
+    def __init__(self, parameterName, dosage, alpha, target, meds=['a', 'b']):
         self.param = parameterName
-        self.dosage = dosage
-        # self.alpha = alpha
+        # self.dosage = dosage
+        self.medications = meds
+        self.alpha = alpha
     
-    def calculateRate(self, y, target):
-        rate = 0.1 * (y - target)
-        print(target)
-        if (rate < 0): rate = 0
-        if (rate > 0.5): rate = 0.5
-        return (-rate) * y
+    # def updateDosage(self, newDosage):
+    #     if (newDosage >= 0.5):
+    #         newDosage = 0.5
+    #     self.dosage = newDosage
     
-    def updateDosage(self, newDosage):
-        if (newDosage >= 0.5):
-            newDosage = 0.5
-        self.dosage = newDosage
-    
-    def getDosage(self):
-        return self.dosage
+    # def getDosage(self):
+    #     return self.dosage
 
-    def medModel(self, t, y):
-        # parameterComponent = random.uniform(-0.005*self.alpha, 0.01*self.alpha)
-        return -self.dosage * y
+    def parameterModel(self, t, y):
+        parameterComponent = random.uniform(-0.1*self.alpha, 0.1*self.alpha)
+        return parameterComponent * y
 
     # def solve_ivp(self, tRange, y0):
     #     sol = solve_ivp(self.userModel, t_span=tRange, y0=y0, t_eval=np.linspace(tRange[0], tRange[1], tRange[1]+1))

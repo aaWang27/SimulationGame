@@ -4,12 +4,12 @@ from scipy.integrate import solve_ivp
 
 import matplotlib.pyplot as plt
 
-from SimpleMedicationModel import SimpleMedicationModel
 
-class BloodPresssureModel:
-    def __init__(self, parameterName, dosage, alpha, target):
+class DummyParam:
+    def __init__(self, parameterName, dosage, alpha, target, meds=['a', 'b']):
         self.param = parameterName
         # self.dosage = dosage
+        self.medications = meds
         self.alpha = alpha
     
     # def updateDosage(self, newDosage):
@@ -21,7 +21,7 @@ class BloodPresssureModel:
     #     return self.dosage
 
     def parameterModel(self, t, y):
-        parameterComponent = random.uniform(-0.005*self.alpha, 0.01*self.alpha)
+        parameterComponent = random.uniform(-0.05*self.alpha, 0.1*self.alpha)
         return parameterComponent * y
 
     # def solve_ivp(self, tRange, y0):

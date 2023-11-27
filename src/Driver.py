@@ -1,3 +1,4 @@
+import os
 from random import randint
 import sys
 import time
@@ -15,6 +16,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
+import textwrap
 
 from SimpleMedicationModel import SimpleMedicationModel as MedModel
 from SimpleParameterModel import SimpleParameterModel as ParamModel
@@ -22,7 +24,9 @@ from UserParameterModel import UserParameterModel as UsrParamModel
 from ComputerParameterModel import ComputerParameterModel as CompParamModel
 
 # new
-from BloodPressureModel import BloodPresssureModel
+from BloodPressure import BloodPresssure
+from DummyParam import DummyParam
+from OxygenContent import OxygenContent
 from MedicationAModel import MedicationAModel
 from MedicationAComputerModel import MedicationAComputerModel
 
@@ -38,27 +42,24 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.curMedRate = 0
         self.composedModel = None
 
+        self.combobox1 = QComboBox()
+
         self.decayRate = MedModel.bodyMedicationADecay
 
-        self.medicationMap = {"Blood Pressure": ["a", "b"],
-                              "Blood Pressure 2": ["a", "b"],
-                              "Blood Pressure Computer": ["a", "d"],
-                              "Oxygen Content": ["e", "f"]}
+        self.parameters = ["BloodPressure", "DummyParam", "OxygenContent"]
+
+        self.medicationMap = {"BloodPressure": ["a", "b"],
+                              "DummyParam": ["a", "d"],
+                              "OxygenContent": ["a", "f"]}
 
         # maps parameter name to associated model
-        self.paramModelMap = {"Blood Pressure": UsrParamModel,
-                              "Blood Pressure 2": BloodPresssureModel,
-                              "Blood Pressure Computer": UsrParamModel,
-                              "Oxygen Content": UsrParamModel}
-
-        self.computerModelMap = {"Blood Pressure": CompParamModel,
-                              "Blood Pressure Computer": CompParamModel,
-                              "Oxygen Content": CompParamModel}
+        self.paramModelMap = {"BloodPressure": BloodPresssure,
+                              "DummyParam": DummyParam,
+                              "OxygenContent": OxygenContent}
         
-        self.targetMap = {"Blood Pressure": [95, 105],
-                          "Blood Pressure 2": [95, 105],
-                              "Blood Pressure Computer": [95, 105],
-                              "Oxygen Content": [80, 120]}
+        self.targetMap = {"BloodPressure": [95, 105],
+                            "DummyParam": [90, 110],
+                              "OxygenContent": [80, 120]}
 
         # maps medication name to associated model
         self.medModelMap = {"a": MedicationAModel,
@@ -68,7 +69,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                               "e": MedModel,
                               "f": MedModel}
     
-        self.medModelMap = {"a": MedicationAComputerModel,
+        self.medModelComputerlMap = {"a": MedicationAComputerModel,
                               "b": MedModel,
                               "c": MedModel,
                               "d": MedModel,
@@ -92,6 +93,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.layout.setGeometry(QRect(0, 0, 0, 0))
         self._main.setGeometry(0, 0, 0, 0)
         self._main.setWindowTitle('Simulation Game')
+
+        self.width = self.frameGeometry().width()
+        self.height = self.frameGeometry().height()
 
         self.paramModel = None  # parameter model being used
         self.paramValues = []  # array to store values of parameter over time
@@ -120,7 +124,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.layout.addLayout(self.UIDropdownComponents(), 0, 0)
         self.layout.addLayout(self.logComponents(), 1, 0)
         self.layout.addLayout(self.uploadModelComponent(), 1,2)
-        self.layout.addLayout(self.instructionPage(), 0,2)
+        self.layout.addWidget(self.instructionPage(), 0,2)
+
+        self.showMaximized()
 
     def composeModels(self, pm, mm):
         return lambda t_, y_: pm.parameterModel(t_, y_) + mm.medModel(t_, y_)
@@ -186,7 +192,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         if self.curTime<=self.stopTime:
             # solve IVP to get current parameter value
             sol = self.solve_ivp_here([self.savedTime, self.curTime], self.initVal, self.composedModel)
-            # computerSol = self.computerParamModel.solve_ivp([self.computerSavedTime, self.curTime], self.computerInitVal)
+            computerSol = self.solve_ivp_here([self.computerSavedTime, self.curTime], self.computerInitVal, self.composedComputerModel)
 
             # update time, parameter values, and medication values
             self.times.append(self.curTime)
@@ -195,10 +201,15 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.medValues.append(self.medValues[-1] + float(self.curMedRate)/60 + self.decayRate(self.medValues[-1]))
             self.medModel.updateDosage(self.medValues[-1])
             self.y = sol.y
+
+            self.computerCurMed = -1 * (120 - self.computerParamValues[-1]) * 0.1
+            if (self.computerCurMed < 0 ): self.computerCurMed = 0
+            if (self.computerCurMed > 0.5): self.computerCurMed = 0.5
             
-            # self.computerParamValues.append(computerSol.y[-1])
-            # self.computerCurMedRate = self.computerParamModel.getDosage()
-            # self.computerMedValues.append(self.computerMedValues[-1] + float(self.computerCurMedRate) / 60 + self.decayRate(self.computerMedValues[-1]))
+            self.computerParamValues.append(computerSol.y[-1])
+            # self.curMedRate = self.medModel.getDosage()
+            self.computerMedValues.append(self.computerMedValues[-1] + float(self.computerCurMed)/60 + self.decayRate(self.computerMedValues[-1]))
+            self.medComputerModel.updateDosage(self.computerMedValues[-1])
 
             # if more than 60 seconds have passed since the start of the
             # simulation, shift the plot to only display the last 60 seconds
@@ -383,11 +394,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.model_selected = False  # whether a model has been selected
 
         self.paramLabel = QLabel('Choose Parameter', self)
-        self.combobox1 = QComboBox()
-        self.combobox1.addItem('Blood Pressure')
-        self.combobox1.addItem('Blood Pressure 2')
-        self.combobox1.addItem('Blood Pressure Computer')
-        self.combobox1.addItem('Oxygen Content')
+        
+
+        for item in self.parameters:
+            self.combobox1.addItem(item)
+
         self.combobox1.activated.connect(actionSetParam)
 
         self.medLabel = QLabel('Choose Medication', self)
@@ -413,28 +424,90 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             
         self.uploadModelButton = QPushButton("Upload Model", self)
         self.uploadModelButton.clicked.connect(lambda: self.getFile(file_dialog))
+
+        self.addMedButton = QPushButton("Add Medication", self)
+        self.addMedButton.clicked.connect(lambda: self.addMed(file_dialog))
+        
         # self.uploadModelButton.clicked.connect(self.uploadToDict)
         self.uploadModelButtonLayout.addWidget(self.uploadModelButton, 0, 0)
+        self.uploadModelButtonLayout.addWidget(self.addMedButton, 0, 1)
+            
+        self.restartModelButton = QPushButton("Restart Simulation", self)
+        self.restartModelButton.clicked.connect(self.restart)
+        # self.uploadModelButton.clicked.connect(self.uploadToDict)
+        self.uploadModelButtonLayout.addWidget(self.restartModelButton, 1,0)
+
+
         return self.uploadModelButtonLayout
 
+
+    def restart(self):
+        os.execl(sys.executable, sys.executable, *sys.argv)
+
+    def addMed(self, fd):
+        modelName, done = QtWidgets.QInputDialog.getText(self, 'Input Dialog', 'Enter Model to Add Medication:')
+        medName, done2 = QtWidgets.QInputDialog.getText(self, 'Input Dialog', 'Enter Medication Name:')
+        compModel, done3 = QtWidgets.QInputDialog.getItem(self, 'Input Dialog', 'Is this a computer model:', ['yes', 'no'])
+
+        if done and done2 and done3:
+            file_path, _ = fd.getOpenFileName(self, 'Open Medication Model', '', 'All Files (*);;Text Files (*.txt)')
+            print(file_path)
+            self.uploadedModelPath = file_path
+
+            if (modelName in self.medicationMap.keys):
+                self.medicationMap[modelName] = []
+
+            self.medicationMap[modelName].append(medName)
+
+            # self.medModelMap[medName] = 
+
+
+
+
     def getFile(self, fd):
-        file_path, _ = fd.getOpenFileName(self, 'Open File', '', 'All Files (*);;Text Files (*.txt)')
-        print(file_path)
-        self.uploadedModelPath = file_path
-        return file_path
+        modelName, done = QtWidgets.QInputDialog.getText(
+              self, 'Input Dialog', 'Enter Model Name:')
+        
+        if done:
+        
+            file_path, _ = fd.getOpenFileName(self, 'Open File', '', 'All Files (*);;Text Files (*.txt)')
+            print(file_path)
+            self.uploadedModelPath = file_path
+
+            self.combobox1.addItem(modelName)
+
+
+            
+
+            return modelName, file_path
 
     def instructionPage(self):
         self.instructionPageLayout = QtWidgets.QGridLayout()
 
-        instructionsText = "The objective of this simulation is to bring a physiological parameter \nwithin a target range by adjusting the medication level.\nThe physiological parameter value is represented by the blue line, \nthe medication level is represented by the red line, \nand the target range is indicated by the area between the black lines on the graph.\nTo Start: \nSelect a physiological parameter to simulate, using either the dropdown menu to select an existing model, \nor the upload model button to use a custom model.\nSelect a medication to use.\nPress \"Start Simulation\" to begin the simulation. The simulation will run for 3 minutes.\n Use the keypad to control the medication level by clicking the numbers on the keypad.\nWhen the simulation is done running, a new page will display your results compared to the results of a computer algorithm."
+        wrapper = textwrap.TextWrapper(width=self.width/10)
 
-        self.instructionsTitle = QLabel('Instructions', self)
-        self.instructions = QLabel(instructionsText, self)
-        
-        self.instructionPageLayout.addWidget(self.instructionsTitle, 0, 0)
-        self.instructionPageLayout.addWidget(self.instructions, 1, 0)
+        introText = "The objective of this simulation is to bring a physiological parameter within a target range by adjusting the medication level. The physiological parameter value is represented by the blue line, the medication level is represented by the red line, and the target range is indicated by the area between the black lines on the graph."
+        startText = "To Start: Select a physiological parameter to simulate, using either the dropdown menu to select an existing model, or the upload model button to use a custom model. Select a medication to use. Press \"Start Simulation\" to begin the simulation."
+        endText = "The simulation will run for 3 minutes. Use the keypad to control the medication level by clicking the numbers on the keypad. When the simulation is done running, a new page will display your results compared to the results of a computer algorithm."
+        introFormat = wrapper.fill(text=introText)
+        startFormat = wrapper.fill(text=startText)
+        endFormat = wrapper.fill(text=endText)
 
-        return self.instructionPageLayout
+        self.instructions = QLabel('Instructions\n\n'+introText+"\n\n"+startText+"\n\n"+endText, self)
+        self.instructions.setWordWrap(True)
+        self.instructions.adjustSize()
+        #self.setMinimumSize(self.sizeHint())
+
+        self.instructionPageLayout.addWidget(self.instructions, 0, 0)
+
+        instructionScrollArea = QScrollArea()
+        vbar = instructionScrollArea.verticalScrollBar()
+        vbar.setValue(vbar.maximum())
+        instructionScrollArea.setWidget(self.instructions)
+        instructionScrollArea.ensureWidgetVisible(self.values, 200, 200)
+        instructionScrollArea.setWidgetResizable(True)
+
+        return instructionScrollArea
 
     def startSimulation(self):
         # starts the simulation
@@ -447,7 +520,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
             self.paramModel = self.paramModelMap[self.param](self.param, 0, self.alpha, 100)
             self.medModel = self.medModelMap[self.medication](self.medication, 0, self.alpha, 100)
-            self.medComputerModel = self.medModelComputerMap[self.medication](self.medication, 0, self.alpha, 100)
+            self.medComputerModel = self.medModelComputerlMap[self.medication](self.medication, 0, self.alpha, 100)
             
             self.composedModel = self.composeModels(self.paramModel, self.medModel)
             self.composedComputerModel = self.composeModels(self.paramModel, self.medComputerModel)
