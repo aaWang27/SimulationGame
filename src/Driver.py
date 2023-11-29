@@ -4,6 +4,9 @@ import sys
 import time
 
 import numpy as np
+import pandas as pd
+
+from datetime import datetime
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import \
@@ -204,9 +207,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.medModel.updateDosage(self.medValues[-1])
             self.y = sol.y
 
-            self.computerCurMed = -1 * (120 - self.computerParamValues[-1]) * 0.1
-            if (self.computerCurMed < 0 ): self.computerCurMed = 0
-            if (self.computerCurMed > 0.5): self.computerCurMed = 0.5
+            self.computerCurMed = self.medComputerModel.calculateRate(self.computerParamValues[-1], 100)
+
+            # self.computerCurMed = (self.computerParamValues[-1] - 100) * 0.001
+            # if (self.computerCurMed < 0 ): self.computerCurMed = 0
+            # if (self.computerCurMed > 0.2): self.computerCurMed = 0.2
+            
             
             self.computerParamValues.append(computerSol.y[-1])
             # self.curMedRate = self.medModel.getDosage()
@@ -701,6 +707,14 @@ class MetricsWindow(QtWidgets.QMainWindow):
         self.computerParamValues = np.array(computerVals)
         self.computerMedValues = np.array(computerMedVals)
         self.times = np.array(times)
+
+
+        df = pd.DataFrame(np.asarray([ times, self.paramValues, self.medValues, self.computerParamValues, self.computerMedValues ]))
+        curr_dt = datetime.now()
+        time = str(int(round(curr_dt.timestamp())))
+        df.to_csv("./data/"+time+".csv")
+
+
         self.targetLow = lowBound
         self.targetHigh = highBound
 

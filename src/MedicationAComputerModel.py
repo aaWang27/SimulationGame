@@ -13,11 +13,11 @@ class MedicationAComputerModel:
         # self.alpha = alpha
     
     def calculateRate(self, y, target):
-        rate = 0.1 * (y - target)
-        print(target)
-        if (rate < 0): rate = 0
-        if (rate > 0.5): rate = 0.5
-        return (-rate) * y
+    
+        rate = (y - target) * 0.001
+        if (rate < 0 ): rate = 0
+        if (rate > 0.2): rate = 0.2
+        return rate
     
     def updateDosage(self, newDosage):
         if (newDosage >= 0.5):
