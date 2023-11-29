@@ -30,8 +30,13 @@ from ComputerParameterModel import ComputerParameterModel as CompParamModel
 from BloodPressure import BloodPresssure
 from DummyParam import DummyParam
 from OxygenContent import OxygenContent
+
 from MedicationAModel import MedicationAModel
 from MedicationAComputerModel import MedicationAComputerModel
+
+
+from MedicationOxygenModel import MedicationOxygenModel
+from MedicationOxygenComputerModel import MedicationOxygenComputerModel
 
 class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -53,9 +58,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.parameters = ["BloodPressure", "DummyParam", "OxygenContent"]
 
-        self.medicationMap = {"BloodPressure": ["a", "b"],
+        self.medicationMap = {"BloodPressure": ["Prinivil"],
                               "DummyParam": ["a", "d"],
-                              "OxygenContent": ["a", "f"]}
+                              "OxygenContent": ["Oxygen"]}
 
         # maps parameter name to associated model
         self.paramModelMap = {"BloodPressure": BloodPresssure,
@@ -65,17 +70,21 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.targetMap = {"BloodPressure": [95, 105],
                             "DummyParam": [90, 110],
                               "OxygenContent": [80, 120]}
+        
+        self.startValueMap = {"BloodPressure": [180],
+                            "DummyParam": [180],
+                              "OxygenContent": [40]}
 
         # maps medication name to associated model
-        self.medModelMap = {"a": MedicationAModel,
-                              "b": MedModel,
+        self.medModelMap = {"Prinivil": MedicationAModel,
+                              "Oxygen": MedicationOxygenModel,
                               "c": MedModel,
                               "d": MedModel,
                               "e": MedModel,
                               "f": MedModel}
     
-        self.medModelComputerlMap = {"a": MedicationAComputerModel,
-                              "b": MedModel,
+        self.medModelComputerlMap = {"Prinivil": MedicationAComputerModel,
+                              "Oxygen": MedicationOxygenComputerModel,
                               "c": MedModel,
                               "d": MedModel,
                               "e": MedModel,
@@ -159,8 +168,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     def _start_plot(self):
         self.curTime = 0  # current time
-        self.initVal = [180]  # initial parameter value
-        self.computerInitVal = [180]
+        # self.initVal = [180]  # initial parameter value
+        # self.computerInitVal = [180]
+
+        self.initVal = self.startValueMap[self.param]
+        self.computerInitVal = self.startValueMap[self.param]
+
         self.savedTime = 0  # time at which to start integrating
         self.curMed = 0  # current medication value
 
@@ -207,7 +220,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.medModel.updateDosage(self.medValues[-1])
             self.y = sol.y
 
-            self.computerCurMed = self.medComputerModel.calculateRate(self.computerParamValues[-1], 100)
+            self.computerCurMed = self.medComputerModel.calculateRate(self.computerParamValues[-1], (self.targetMap[self.param][0]+self.targetMap[self.param][1])*0.5)
 
             # self.computerCurMed = (self.computerParamValues[-1] - 100) * 0.001
             # if (self.computerCurMed < 0 ): self.computerCurMed = 0
@@ -411,6 +424,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         def actionSetParam():
             self.combobox2.clear()
             self.combobox2.addItems(self.medicationMap[self.combobox1.currentText()])
+            
             self.model_selected = True
             return self.combobox1.currentText()
 
@@ -427,6 +441,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.combobox1.addItem(item)
 
         self.combobox1.activated.connect(actionSetParam)
+        self.combobox1.setCurrentIndex(-1)
 
         self.medLabel = QLabel('Choose Medication', self)
         self.medLabel.setAlignment(Qt.AlignHCenter)
