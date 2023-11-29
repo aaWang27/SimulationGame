@@ -117,7 +117,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.medValues = []  # array to store values of medication over time
         self.times = []  # array to store timestamps
         self.started = False  # whether the simulation has been started
-        self.stopTime = 70
+        self.stopTime = 90
 
         self.computerParamModel = None
         self.computerParamValues = []
@@ -561,18 +561,20 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         wrapper = textwrap.TextWrapper(width=self.width/10)
 
-        introText = "\nThe objective of this simulation is to bring a physiological parameter within a target range by adjusting the medication level.\n\nThe physiological parameter value is represented by the blue line. \n\nThe medication level is represented by the red line. \n\nThe target range is indicated by the area between the black lines on the graph."
+        introText = "\nThe objective of this simulation is to bring a physiological parameter within a target range by adjusting the medication level.\n\nThe physiological parameter value is represented by the blue line. \n\nThe medication level is represented by the red line. \n\nThe target range is indicated by the area between the black lines on the graph. \n\nThe recommended range for the medication rate is between 0 and 0.3"
         startText1 = "\nSelect a physiological parameter to simulate, using either the dropdown menu to select an existing model, or the upload model button to use a custom model. \n\nSelect a medication associated with the physiological parameter, using either the dropdown menu or the upload model button. \n\nPress \"Start Simulation\" to begin the simulation."
-        startText2 = "The simulation will run for 3 minutes. \n\nUse the keypad to control the medication level by clicking the numbers on the keypad. \n\nWhen the simulation is complete, a new window will display metrics that compare your performance to a computer algorithm."
+        startText2 = "The simulation will run for 90 seconds. \n\nUse the keypad to control the medication level by clicking the numbers on the keypad. \n\nWhen the simulation is complete, a new window will display metrics that compare your performance to a computer algorithm."
         # introFormat = wrapper.fill(text=introText)
         # startFormat = wrapper.fill(text=startText1)
         # endFormat = wrapper.fill(text=startText2)
 
         self.title = QLabel("Instructions")
         self.title.setAlignment(Qt.AlignHCenter)
+        self.title.setFont(QFont('Arial', 10))
         #self.title.setStyleSheet("background-color: white;")
 
         self.intro = QLabel(introText+"\n\n", self)
+        self.intro.setFont(QFont('Arial', 10))
         self.intro.setWordWrap(True)
         self.intro.adjustSize()
         self.intro.setAlignment(Qt.AlignTop)
@@ -592,10 +594,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
 
         self.startTitle = QLabel("To Start")
+        self.startTitle.setFont(QFont('Arial', 10))
         self.startTitle.setAlignment(Qt.AlignHCenter)
         #self.startTitle.setStyleSheet("background-color: white;")
 
         self.startInstructions = QLabel(startText1+"\n\n"+startText2, self)
+        self.startInstructions.setFont(QFont('Arial', 10))
         self.startInstructions.setWordWrap(True)
         self.startInstructions.adjustSize()
         self.startInstructions.setAlignment(Qt.AlignTop)
@@ -723,12 +727,10 @@ class MetricsWindow(QtWidgets.QMainWindow):
         self.computerMedValues = np.array(computerMedVals)
         self.times = np.array(times)
 
-
         df = pd.DataFrame(np.asarray([ times, self.paramValues, self.medValues, self.computerParamValues, self.computerMedValues ]))
         curr_dt = datetime.now()
         time = str(int(round(curr_dt.timestamp())))
-        df.to_csv("./data/"+time+".csv")
-
+        df.to_csv("../data/"+time+".csv")
 
         self.targetLow = lowBound
         self.targetHigh = highBound
