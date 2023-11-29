@@ -33,6 +33,7 @@ from MedicationAComputerModel import MedicationAComputerModel
 class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
+        #self.setStyleSheet("background-color: grey;")
         self._main = QtWidgets.QWidget()
         self.metricsWindow = None
 
@@ -43,6 +44,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.composedModel = None
 
         self.combobox1 = QComboBox()
+        #self.combobox1.setStyleSheet("background-color: white;")
 
         self.decayRate = MedModel.bodyMedicationADecay
 
@@ -123,8 +125,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.layout.addLayout(self.keypadComponents(), 1, 1)
         self.layout.addLayout(self.UIDropdownComponents(), 0, 0)
         self.layout.addLayout(self.logComponents(), 1, 0)
-        self.layout.addLayout(self.uploadModelComponent(), 1,2)
-        self.layout.addWidget(self.instructionPage(), 0,2)
+        # self.layout.addLayout(self.uploadModelComponent(), 1,2)
+        self.layout.addLayout(self.instructionPage(), 0, 2, 1, 1)
 
         self.showMaximized()
 
@@ -263,42 +265,53 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         # adding number buttons to the screen
         # creating a push button
         push1 = QPushButton("1", self)
+        #push1.setStyleSheet("border : 1px solid black;")
+        #push1.setStyleSheet("background-color: white;")
         # push1.setGeometry(5, 150, 80, 40)
  
         # creating a push button
         push2 = QPushButton("2", self)
+        #push2.setStyleSheet("background-color: white;")
         # push2.setGeometry(95, 150, 80, 40)
  
         # creating a push button
         push3 = QPushButton("3", self)
+        #push3.setStyleSheet("background-color: white;")
         # push3.setGeometry(185, 150, 80, 40)
  
         # creating a push button
         push4 = QPushButton("4", self)
+        #push4.setStyleSheet("background-color: white;")
         # push4.setGeometry(5, 200, 80, 40)
  
         # creating a push button
         push5 = QPushButton("5", self)
+        #push5.setStyleSheet("background-color: white;")
         # push5.setGeometry(95, 200, 80, 40)
  
         # creating a push button
         push6 = QPushButton("6", self)
+        #push6.setStyleSheet("background-color: white;")
         # push6.setGeometry(185, 200, 80, 40)
  
         # creating a push button
         push7 = QPushButton("7", self)
+        #push7.setStyleSheet("background-color: white;")
         # push7.setGeometry(5, 250, 80, 40)
  
         # creating a push button
         push8 = QPushButton("8", self)
+        #push8.setStyleSheet("background-color: white;")
         # push8.setGeometry(95, 250, 80, 40)
  
         # creating a push button
         push9 = QPushButton("9", self)
+        #push9.setStyleSheet("background-color: white;")
         # push9.setGeometry(185, 250, 80, 40)
  
         # creating a push button
         push0 = QPushButton("0", self)
+        #push0.setStyleSheet("background-color: white;")
         # push0.setGeometry(5, 300, 80, 40)
  
         # adding operator push button
@@ -310,18 +323,22 @@ class ApplicationWindow(QtWidgets.QMainWindow):
  
         # creating push button
         push_OK = QPushButton("OK", self)
+        #push_OK.setStyleSheet("background-color: white;")
         # push_OK.setGeometry(185, 300, 80, 40)
  
         # creating push button
         push_point = QPushButton(".", self)
+        #push_point.setStyleSheet("background-color: white;")
         # push_point.setGeometry(95, 300, 80, 40)
 
         # clear button
         push_clear = QPushButton("Clear", self)
+        #push_clear.setStyleSheet("background-color: white;")
         # push_clear.setGeometry(5, 100, 170, 40)
  
         # del one character button
         push_del = QPushButton("Del", self)
+        #push_del.setStyleSheet("background-color: white;")
         # push_del.setGeometry(185, 100, 80, 40)
 
         # add buttons to the keypad layout
@@ -362,12 +379,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def logComponents(self):
         self.logLayout = QtWidgets.QGridLayout()
         self.medRate = QLabel('Log of Medication Rates', self)
+        #self.medRate.setStyleSheet("background-color: white;")
+        self.medRate.setAlignment(Qt.AlignHCenter)
         
         self.logLayout.addWidget(self.medRate)
 
         self.curText = str(self.curMedRate) + "\n"
         self.values = QLabel(self.curText, self)
-        self.values.setAlignment(Qt.AlignRight)
+        self.values.setAlignment(Qt.AlignHCenter)
 
         self.scrollArea = QScrollArea()
         vbar = self.scrollArea.verticalScrollBar()
@@ -375,6 +394,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.scrollArea.setWidget(self.values)
         self.scrollArea.ensureWidgetVisible(self.values, 200, 200)
         self.scrollArea.setWidgetResizable(True)
+        #self.scrollArea.setStyleSheet("background-color: white;")
 
         self.logLayout.addWidget(self.scrollArea)
 
@@ -394,7 +414,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.model_selected = False  # whether a model has been selected
 
         self.paramLabel = QLabel('Choose Parameter', self)
-        
+        self.paramLabel.setAlignment(Qt.AlignHCenter)
+        #self.paramLabel.setStyleSheet("background-color: white;")
 
         for item in self.parameters:
             self.combobox1.addItem(item)
@@ -402,18 +423,53 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.combobox1.activated.connect(actionSetParam)
 
         self.medLabel = QLabel('Choose Medication', self)
+        self.medLabel.setAlignment(Qt.AlignHCenter)
+        #self.medLabel.setStyleSheet("background-color: white;")
+
         self.combobox2 = QComboBox()
+        #self.combobox2.setStyleSheet("background-color: white;")
 
         self.startButton = QPushButton("Start Simulation", self)
         self.startButton.clicked.connect(self.startSimulation)
+        #self.startButton.setStyleSheet("background-color: white;")
+
+        verticalSpacer = QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
 
         # add buttons and dropdown menus to dropdown layout
-        self.dropdownLayout.addWidget(self.paramLabel, 0, 0)
-        self.dropdownLayout.addWidget(self.combobox1, 1, 0)
-        self.dropdownLayout.addWidget(self.medLabel, 2, 0)
-        self.dropdownLayout.addWidget(self.combobox2, 3, 0)
-        self.dropdownLayout.addWidget(self.startButton, 4, 0)
-                
+        self.dropdownLayout.addItem(verticalSpacer, 0, 0)
+        self.dropdownLayout.addWidget(self.paramLabel, 1, 0, 1, 2)
+        self.dropdownLayout.addWidget(self.combobox1, 2, 0, 1, 2)
+
+        file_dialog = QFileDialog(self)
+
+        self.uploadModelButton = QPushButton("Upload Model", self)
+        self.uploadModelButton.clicked.connect(lambda: self.getFile(file_dialog))
+        #self.uploadModelButton.setStyleSheet("background-color: white;")
+        self.dropdownLayout.addWidget(self.uploadModelButton, 3, 0, 1, 2)
+        self.dropdownLayout.addItem(verticalSpacer, 4, 0)
+
+        self.dropdownLayout.addWidget(self.medLabel, 5, 0, 1, 2)
+        self.dropdownLayout.addWidget(self.combobox2, 6, 0, 1, 2)
+
+        self.addMedButton = QPushButton("Add Medication", self)
+        self.addMedButton.clicked.connect(lambda: self.addMed(file_dialog))
+        #self.addMedButton.setStyleSheet("background-color: white;")
+
+        self.dropdownLayout.addWidget(self.addMedButton, 7, 0, 1, 2)
+        self.dropdownLayout.addItem(verticalSpacer, 8, 0)
+
+        self.restartModelButton = QPushButton("Restart Simulation", self)
+        self.restartModelButton.clicked.connect(self.restart)
+        #self.restartModelButton.setStyleSheet("background-color: white;")
+
+        self.dropdownLayout.addWidget(self.startButton, 9, 0, 1, 2)
+        self.dropdownLayout.addWidget(self.restartModelButton, 10, 0, 1, 2)
+
+        self.dropdownLayout.addItem(verticalSpacer, 11, 0)
+
+        self.dropdownLayout.setSpacing(20)
+        self.dropdownLayout.setContentsMargins(0,50,0,50)
+
         return self.dropdownLayout
 
     file_dialog = None
@@ -424,9 +480,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             
         self.uploadModelButton = QPushButton("Upload Model", self)
         self.uploadModelButton.clicked.connect(lambda: self.getFile(file_dialog))
+        #self.uploadModelButton.setStyleSheet("background-color: white;")
 
         self.addMedButton = QPushButton("Add Medication", self)
         self.addMedButton.clicked.connect(lambda: self.addMed(file_dialog))
+        #self.addMedButton.setStyleSheet("background-color: white;")
         
         # self.uploadModelButton.clicked.connect(self.uploadToDict)
         self.uploadModelButtonLayout.addWidget(self.uploadModelButton, 0, 0)
@@ -434,6 +492,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             
         self.restartModelButton = QPushButton("Restart Simulation", self)
         self.restartModelButton.clicked.connect(self.restart)
+        #self.restartModelButton.setStyleSheet("background-color: white;")
         # self.uploadModelButton.clicked.connect(self.uploadToDict)
         self.uploadModelButtonLayout.addWidget(self.restartModelButton, 1,0)
 
@@ -462,8 +521,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             # self.medModelMap[medName] = 
 
 
-
-
     def getFile(self, fd):
         modelName, done = QtWidgets.QInputDialog.getText(
               self, 'Input Dialog', 'Enter Model Name:')
@@ -476,9 +533,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
             self.combobox1.addItem(modelName)
 
-
-            
-
             return modelName, file_path
 
     def instructionPage(self):
@@ -486,28 +540,57 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         wrapper = textwrap.TextWrapper(width=self.width/10)
 
-        introText = "The objective of this simulation is to bring a physiological parameter within a target range by adjusting the medication level. The physiological parameter value is represented by the blue line, the medication level is represented by the red line, and the target range is indicated by the area between the black lines on the graph."
-        startText = "To Start: Select a physiological parameter to simulate, using either the dropdown menu to select an existing model, or the upload model button to use a custom model. Select a medication to use. Press \"Start Simulation\" to begin the simulation."
-        endText = "The simulation will run for 3 minutes. Use the keypad to control the medication level by clicking the numbers on the keypad. When the simulation is done running, a new page will display your results compared to the results of a computer algorithm."
-        introFormat = wrapper.fill(text=introText)
-        startFormat = wrapper.fill(text=startText)
-        endFormat = wrapper.fill(text=endText)
+        introText = "\nThe objective of this simulation is to bring a physiological parameter within a target range by adjusting the medication level.\n\nThe physiological parameter value is represented by the blue line. \n\nThe medication level is represented by the red line. \n\nThe target range is indicated by the area between the black lines on the graph."
+        startText1 = "\nSelect a physiological parameter to simulate, using either the dropdown menu to select an existing model, or the upload model button to use a custom model. \n\nSelect a medication associated with the physiological parameter, using either the dropdown menu or the upload model button. \n\nPress \"Start Simulation\" to begin the simulation."
+        startText2 = "The simulation will run for 3 minutes. \n\nUse the keypad to control the medication level by clicking the numbers on the keypad. \n\nWhen the simulation is complete, a new window will display metrics that compare your performance to a computer algorithm."
+        # introFormat = wrapper.fill(text=introText)
+        # startFormat = wrapper.fill(text=startText1)
+        # endFormat = wrapper.fill(text=startText2)
 
-        self.instructions = QLabel('Instructions\n\n'+introText+"\n\n"+startText+"\n\n"+endText, self)
-        self.instructions.setWordWrap(True)
-        self.instructions.adjustSize()
+        self.title = QLabel("Instructions")
+        self.title.setAlignment(Qt.AlignHCenter)
+        #self.title.setStyleSheet("background-color: white;")
+
+        self.intro = QLabel(introText+"\n\n", self)
+        self.intro.setWordWrap(True)
+        self.intro.adjustSize()
+        self.intro.setAlignment(Qt.AlignTop)
         #self.setMinimumSize(self.sizeHint())
 
-        self.instructionPageLayout.addWidget(self.instructions, 0, 0)
+        self.instructionPageLayout.addWidget(self.title, 0, 0)
 
         instructionScrollArea = QScrollArea()
         vbar = instructionScrollArea.verticalScrollBar()
         vbar.setValue(vbar.maximum())
-        instructionScrollArea.setWidget(self.instructions)
-        instructionScrollArea.ensureWidgetVisible(self.values, 200, 200)
+        instructionScrollArea.setWidget(self.intro)
+        instructionScrollArea.ensureWidgetVisible(self.intro, 200, 200)
         instructionScrollArea.setWidgetResizable(True)
+        #instructionScrollArea.setStyleSheet("background-color: white;")
 
-        return instructionScrollArea
+        self.instructionPageLayout.addWidget(instructionScrollArea, 1, 0)
+
+
+        self.startTitle = QLabel("To Start")
+        self.startTitle.setAlignment(Qt.AlignHCenter)
+        #self.startTitle.setStyleSheet("background-color: white;")
+
+        self.startInstructions = QLabel(startText1+"\n\n"+startText2, self)
+        self.startInstructions.setWordWrap(True)
+        self.startInstructions.adjustSize()
+        self.startInstructions.setAlignment(Qt.AlignTop)
+
+        startScrollArea = QScrollArea()
+        vbar = startScrollArea.verticalScrollBar()
+        vbar.setValue(vbar.maximum())
+        startScrollArea.setWidget(self.startInstructions)
+        startScrollArea.ensureWidgetVisible(self.startInstructions, 200, 200)
+        startScrollArea.setWidgetResizable(True)
+        #startScrollArea.setStyleSheet("background-color: white;")
+
+        self.instructionPageLayout.addWidget(self.startTitle, 2, 0)
+        self.instructionPageLayout.addWidget(startScrollArea, 3, 0)
+
+        return self.instructionPageLayout
 
     def startSimulation(self):
         # starts the simulation
