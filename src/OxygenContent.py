@@ -21,7 +21,7 @@ class OxygenContent:
     #     return self.dosage
 
     def parameterModel(self, t, y):
-        parameterComponent = random.uniform(-0.1*self.alpha, 0.1*self.alpha)
+        parameterComponent = random.uniform(-0.15*self.alpha, 0.1*self.alpha)
         return parameterComponent * y
 
     # def solve_ivp(self, tRange, y0):

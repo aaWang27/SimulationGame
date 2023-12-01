@@ -730,7 +730,7 @@ class MetricsWindow(QtWidgets.QMainWindow):
         df = pd.DataFrame(np.asarray([ times, self.paramValues, self.medValues, self.computerParamValues, self.computerMedValues ]))
         curr_dt = datetime.now()
         time = str(int(round(curr_dt.timestamp())))
-        df.to_csv("../data/"+time+".csv")
+        df.to_csv("./data/"+time+".csv")
 
         self.targetLow = lowBound
         self.targetHigh = highBound
