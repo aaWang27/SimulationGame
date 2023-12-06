@@ -9,6 +9,7 @@ from SimpleMedicationModel import SimpleMedicationModel
 class MedicationAModel:
     def __init__(self, parameterName, dosage, alpha, target):
         self.param = parameterName
+        self.units = "mg"
         self.dosage = dosage
         # self.alpha = alpha
     

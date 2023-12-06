@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 class BloodPresssure:
     def __init__(self, parameterName, dosage, alpha, target, meds=['a', 'b']):
         self.param = parameterName
+        self.units = "mmHg"
         # self.dosage = dosage
         self.medications = meds
         self.alpha = alpha

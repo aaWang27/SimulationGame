@@ -66,6 +66,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.paramModelMap = {"BloodPressure": BloodPresssure,
                               "DummyParam": DummyParam,
                               "OxygenContent": OxygenContent}
+
+        self.paramUnitsMap = {"BloodPressure": "mmHg",
+                              "DummyParam": "nothing",
+                              "OxygenContent": "%"}
+
+        self.medUnitsMap = {"BloodPressure": "mg",
+                              "DummyParam": "nothing",
+                              "OxygenContent": "mL"}
         
         self.targetMap = {"BloodPressure": [95, 105],
                             "DummyParam": [90, 110],
@@ -195,8 +203,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         # initialize plot
         self._param_ax.set_xlabel('Time')
-        self._param_ax.set_ylabel(self.paramModel.get_param_name(), color = 'b')
-        self._med_ax.set_ylabel('Total Medication In the Body', color = 'r')
+        self._param_ax.set_ylabel(self.paramModel.get_param_name() + ' (' + self.paramModel.units + ')', color = 'b')
+        self._med_ax.set_ylabel('Total Medication In the Body (' + self.medModel.units + ')', color = 'r')
         self._param_line, = self._param_ax.plot(sol.t, sol.y, color='b')
         self._med_line, = self._med_ax.plot(self.times, self.medValues, color='r')
         self._timer = self.dynamic_canvas.new_timer()
