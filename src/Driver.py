@@ -822,6 +822,8 @@ class MetricsWindow(QtWidgets.QMainWindow):
 
         self.layout.addWidget(self.computer_canvas, 4, 2, 1, 1)
 
+        self.showMaximized()
+
     def calc_time_in_interval(self, paramValues, targetLow, targetHigh):
         return sum(np.logical_and(paramValues >= targetLow, paramValues <= targetHigh))
 
